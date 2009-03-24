@@ -1,0 +1,13 @@
+resource app_signature "application/x-vnd.VinDuv.VMWAddOns";
+
+resource app_version {
+	major      = 0,
+	middle     = 0,
+	minor      = 1,
+	variety    = B_APPV_BETA,
+	internal   = 0,
+	short_info = "VMW Add-Ons",
+	long_info  = "VMW Add-Ons 0.0.1 ©2009 Vincent Duvert"
+};
+
+resource app_flags B_SINGLE_LAUNCH;
