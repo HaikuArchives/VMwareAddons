@@ -14,7 +14,7 @@
 #include <Deskbar.h>
 #include <Roster.h>
 
-#define PERSISTENT_TRAY
+//#define PERSISTENT_TRAY
 
 VMWAddOnsApp::VMWAddOnsApp()
 	: BApplication(APP_SIG)

@@ -2,7 +2,7 @@ CC=gcc
 CXX=g++
 XRES=xres
 CFLAGS=-I. -g -W -Wall -Wno-multichar
-LDFLAGS1=-lbe
+LDFLAGS1=-lbe 
 LDFLAGS2=-nostart -Xlinker -soname=vmwmouse -Xlinker --no-undefined /boot/beos/system/servers/input_server -lbe
 
 all: menu_app vmwmouse
@@ -15,7 +15,7 @@ vmwmouse: VMWMouseFilter.o VMWAddOnsSettings.o vmwbackdoor.o
 	$(CXX) -o "$@" $^ $(LDFLAGS2)
 	mimeset "$@"
 
-VMWAddOns: VMWAddOnsApp.o VMWAddOnsTray.o VMWAddOnsSettings.o vmwbackdoor.o
+VMWAddOns: VMWAddOnsApp.o VMWAddOnsTray.o VMWAddOnsSettings.o VMWAddOnsCleanupWindow.o vmwbackdoor.o
 	$(CXX) -o "$@" $^ $(LDFLAGS1)
 
 %.o: src/%.cpp

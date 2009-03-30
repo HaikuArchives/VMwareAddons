@@ -5,6 +5,7 @@
 
 #include "VMWAddOns.h"
 #include "VMWAddOnsTray.h"
+#include "VMWAddOnsSettings.h"
 #include "vmwbackdoor.h"
 #include "icons.h"
 
@@ -45,6 +46,7 @@ VMWAddOnsTray::init()
 	
 	system_clipboard = new BClipboard("system");
 	clipboard_poller = NULL;
+	window_open = false;
 	
 	icon_all = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_all->SetBits(pic_act_yy, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
@@ -71,6 +73,11 @@ VMWAddOnsTray::~VMWAddOnsTray()
 	
 	delete system_clipboard;
 	delete clipboard_poller;
+	
+	if (window_open) {
+		cleanup_window->Lock();
+		cleanup_window->Close();
+	}
 }
 
 void
@@ -151,7 +158,7 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		case B_ABOUT_REQUESTED:
 		{
 			BAlert* alert = new BAlert("about", 
-				APP_NAME " © 2009, Vincent Duvert\n"
+				APP_NAME ", version " APP_VERSION " © 2009, Vincent Duvert\n"
 				"VMW Backdoor © 2006, Ken Kato\n"
 				"Distributed under the terms of the MIT License.", "OK", NULL, NULL,
                 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
@@ -220,8 +227,45 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 				system_clipboard->Unlock();
 			}
 		}
+	
+		break;
 		
+		case SHRINK_DISKS:
+		{
+			int32 result = (new BAlert("Shrink disks",
+				"Disk shrinking will operate on all auto-expanding disks "
+				"attached to this virtual machine.\nFor best results it is "
+				"recommanded to clean up free space on these disks before starting "
+				"the process.", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, "Clean up disks" B_UTF8_ELLIPSIS, 
+				B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT))->Go();
+			
+			if (result <= 0) // Cancel or quit
+				return;
+			
+			if (result == 2) { // Clean up disks
+				if (window_open) // The selection window is already open (should not happen)
+					return;
+				cleanup_window = new VMWAddOnsCleanupWindow(this);
+				cleanup_window->Show();
+				window_open = true;
+				return;
+			}
+		}
 		
+		case START_SHRINK: // User clicked Shrink now (see above), or the cleanup process completed
+		{
+			int32 result = (new BAlert("Shrink disks",
+				"The shrink operation will now be launched in VMWare."
+				"This may take a long time ; the virtual machine will be "
+				"suspended during the process.", "Cancel", "OK"))->Go();
+			if (result == 1) {
+				
+			}
+		}	
+		break;
+		
+		case SHRINK_WINDOW_CLOSED:
+			window_open = false;
 		break;
 		
 		default:
@@ -293,11 +337,14 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray)
 	menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
 	menu_item->SetMarked(settings.GetBool("clip_enabled", true));
 	AddItem(menu_item);
+
+	if (!tray->window_open)
+		AddItem(new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
 	
 	AddSeparatorItem();
 	
 	AddItem(new BMenuItem("About "APP_NAME B_UTF8_ELLIPSIS, new BMessage(B_ABOUT_REQUESTED)));
-	AddItem(new BMenuItem("Quit", new BMessage(REMOVE_FROM_DESKBAR)));
+	AddItem(new BMenuItem("Quit" B_UTF8_ELLIPSIS, new BMessage(REMOVE_FROM_DESKBAR)));
 		
 	SetTargetForItems(tray);
 	SetAsyncAutoDestruct(true);

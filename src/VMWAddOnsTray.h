@@ -14,6 +14,7 @@
 #include <View.h>
 
 #include "VMWAddOnsSettings.h"
+#include "VMWAddOnsCleanupWindow.h"
 
 class VMWAddOnsTray: public BView {
 public:
@@ -29,18 +30,22 @@ public:
 	virtual status_t		Archive(BMessage *data, bool deep = true) const;
 	static VMWAddOnsTray*	Instantiate(BMessage *data);
 
+	bool					window_open;
+
 private:
-	void				init();
-	void				RemoveMyself(bool askUser);
-	void				SetClipboardSharing(bool enable);
+	void					init();
+	void					RemoveMyself(bool askUser);
+	void					SetClipboardSharing(bool enable);
 	
-	BBitmap*			icon_all;
-	BBitmap*			icon_mouse;
-	BBitmap*			icon_clipboard;
-	BBitmap*			icon_none;
+	BBitmap*				icon_all;
+	BBitmap*				icon_mouse;
+	BBitmap*				icon_clipboard;
+	BBitmap*				icon_none;
 	
-	BClipboard*			system_clipboard;
-	BMessageRunner*		clipboard_poller;
+	BClipboard*				system_clipboard;
+	BMessageRunner*			clipboard_poller;
+	
+	VMWAddOnsCleanupWindow*	cleanup_window;	
 };
 
 class VMWAddOnsMenu: public BPopUpMenu {
