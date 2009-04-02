@@ -18,8 +18,8 @@ public:
 	virtual		~VMWAddOnsSettings();
 	
 	void		Reload();
-	bool		GetBool(char* name, bool default_value);
-	void		SetBool(char* name, bool value);
+	bool		GetBool(const char* name, bool default_value);
+	void		SetBool(const char* name, bool value);
 
 private:
 	BFile		settings_file;

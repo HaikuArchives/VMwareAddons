@@ -1,7 +1,7 @@
 CC=gcc
 CXX=g++
 XRES=xres
-CFLAGS=-I. -g -W -Wall -Wno-multichar
+CFLAGS=-I. -g -W -Wall -Wno-multichar -pedantic -Werror
 LDFLAGS1=-lbe 
 LDFLAGS2=-nostart -Xlinker -soname=vmwmouse -Xlinker --no-undefined /boot/beos/system/servers/input_server -lbe
 

@@ -27,7 +27,7 @@ public:
 	virtual void 			AttachedToWindow();	
 	virtual void			MouseDown(BPoint where);
 
-	virtual status_t		Archive(BMessage *data, bool deep = true) const;
+	virtual status_t		Archive(BMessage *data, bool deep) const;
 	static VMWAddOnsTray*	Instantiate(BMessage *data);
 
 	bool					window_open;

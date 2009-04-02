@@ -48,7 +48,7 @@ VMWAddOnsSettings::Reload()
 }
 
 bool
-VMWAddOnsSettings::GetBool(char* name, bool default_value)
+VMWAddOnsSettings::GetBool(const char* name, bool default_value)
 {
 	bool value;
 	if (settings_msg.FindBool(name, &value) == B_OK) {
@@ -59,7 +59,7 @@ VMWAddOnsSettings::GetBool(char* name, bool default_value)
 }
 
 void
-VMWAddOnsSettings::SetBool(char* name, bool value)
+VMWAddOnsSettings::SetBool(const char* name, bool value)
 {
 	if (settings_msg.ReplaceBool(name, value) == B_NAME_NOT_FOUND) {
 		settings_msg.AddBool(name, value);
