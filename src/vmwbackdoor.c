@@ -6,15 +6,14 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
+#include "vmwbackdoor.h"
+
 #include <setjmp.h>
 #include <signal.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <SupportDefs.h>
 #include <Errors.h>
-
-#include "vmwbackdoor.h"
 
 #define asm_op(opcode, reg) 		\
 	__asm__ __volatile__ (			\

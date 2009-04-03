@@ -3,8 +3,8 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#ifndef VMWCLEANUPWINDOW_H
-#define VMWCLEANUPWINDOW_H
+#ifndef VMW_CLEANUP_WINDOW_H
+#define VMW_CLEANUP_WINDOW_H
 
 #include <File.h>
 #include <ListView.h>

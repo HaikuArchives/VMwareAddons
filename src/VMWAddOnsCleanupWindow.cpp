@@ -1,4 +1,8 @@
-#include "VMWAddOns.h"
+/*
+	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+	All rights reserved. Distributed under the terms of the MIT License.
+*/
+
 #include "VMWAddOnsCleanupWindow.h"
 
 #include <stdio.h>
@@ -11,6 +15,8 @@
 #include <NodeMonitor.h>
 #include <Screen.h>
 #include <ScrollView.h>
+
+#include "VMWAddOns.h"
 
 #define _H(x) static_cast<int>((x)->Frame().Height())
 #define _W(x) static_cast<int>((x)->Frame().Width())
@@ -26,8 +32,8 @@
 #define BUF_SIZE 8192
 
 VMWAddOnsCleanupWindow::VMWAddOnsCleanupWindow(BView* _parent_view)
-	: BWindow(BRect(0, 0, 300, 400), "Shrink virtual disks", B_MODAL_WINDOW,
-		B_NOT_RESIZABLE | B_NOT_CLOSABLE | B_NOT_MOVABLE | B_ASYNCHRONOUS_CONTROLS)
+	: BWindow(BRect(0, 0, 300, 400), "Shrink virtual disks", B_MODAL_WINDOW, B_NOT_RESIZABLE 
+		| B_NOT_CLOSABLE | B_NOT_MOVABLE | B_ASYNCHRONOUS_CONTROLS)
 {
 	parent_view = _parent_view;
 	volume_roster = new BVolumeRoster();
@@ -60,29 +66,30 @@ VMWAddOnsCleanupWindow::VMWAddOnsCleanupWindow(BView* _parent_view)
 		if (!current_volume.IsPersistent() || current_volume.IsRemovable()
 			|| current_volume.IsReadOnly())
 			continue;
+
 		char name[B_FILE_NAME_LENGTH];
 		current_volume.GetName(name);
+		
 		volumes_list->AddItem(new VolumeItem(name, current_volume.Device()));
 	}
+	
 	volume_roster->StartWatching(this);
 	volumes_list->Select(0, volumes_list->CountItems() - 1);
 	
 	disks_view->AddChild(new BScrollView(NULL, volumes_list,
          B_FOLLOW_LEFT | B_FOLLOW_TOP, 0, false, true));
 	
-	cleanup_button = new BButton(BRect(0, 0, 0, 0), NULL, 
-		"Cleanup selection", new BMessage(CLEANUP_SELECTION));
+	cleanup_button = new BButton(BRect(0, 0, 0, 0), NULL, "Cleanup selection",
+		new BMessage(CLEANUP_SELECTION));
 	cleanup_button->MakeDefault(true);
 	cleanup_button->ResizeToPreferred();
 	cleanup_button->MoveTo(w - _W(cleanup_button), y);
 	
 	disks_view->AddChild(cleanup_button);
 	
-	cancel_button = new BButton(BRect(0, 0, 0, 0), NULL, 
-		"Cancel", new BMessage(CANCEL_OPERATION));
+	cancel_button = new BButton(BRect(0, 0, 0, 0), NULL, "Cancel", new BMessage(CANCEL_OPERATION));
 	cancel_button->ResizeToPreferred();
-	cancel_button->MoveTo(w - _W(cleanup_button) - SPACING - _W(cancel_button),
-		y + 3);
+	cancel_button->MoveTo(w - _W(cleanup_button) - SPACING - _W(cancel_button), y + 3);
 	
 	disks_view->AddChild(cancel_button);
 	
@@ -108,16 +115,17 @@ VMWAddOnsCleanupWindow::VMWAddOnsCleanupWindow(BView* _parent_view)
 	
 	cleanup_view->AddChild(progress_bar);
 	
-	stop_button = new BButton(BRect(0, 0, 0, 0), NULL, 
-		"Stop", new BMessage(STOP_OPERATION));
+	stop_button = new BButton(BRect(0, 0, 0, 0), NULL, "Stop", new BMessage(STOP_OPERATION));
 	stop_button->ResizeToPreferred();
 	stop_button->SetEnabled(false);
 	
-	stop_button->MoveTo(2 * SPACING + _W(progress_bar), progress_bar->Frame().bottom - _H(stop_button));
+	stop_button->MoveTo(2 * SPACING + _W(progress_bar), 
+		progress_bar->Frame().bottom - _H(stop_button));
 	
 	cleanup_view->AddChild(stop_button);
 	
-	cleanup_view->ResizeTo(3 * SPACING + _W(progress_bar) + _W(stop_button), 2 * SPACING + _H(progress_bar));
+	cleanup_view->ResizeTo(3 * SPACING + _W(progress_bar) + _W(stop_button), 
+		2 * SPACING + _H(progress_bar));
 	
 }
 
@@ -154,8 +162,8 @@ VMWAddOnsCleanupWindow::MessageReceived(BMessage* message)
 	
 					BVolume volume(device);
 
-					if (volume.InitCheck() != B_OK || !volume.IsPersistent()
-						|| volume.IsRemovable() || volume.IsReadOnly())
+					if (volume.InitCheck() != B_OK || !volume.IsPersistent() || volume.IsRemovable()
+						|| volume.IsReadOnly())
 						return;
 			
 					char name[B_FILE_NAME_LENGTH];
@@ -274,8 +282,8 @@ VMWAddOnsCleanupWindow::MessageReceived(BMessage* message)
 				resume_thread(th);
 			} else {
 				(new BAlert("Error", (BString("An error occurred while cleaning ”") << name
-					<< "” (" << strerror(th) << ").").String(),
-					"Cancel", NULL, NULL, B_WIDTH_AS_USUAL,	B_STOP_ALERT))->Go();
+					<< "” (" << strerror(th) << ").").String(), "Cancel", NULL, NULL,
+						B_WIDTH_AS_USUAL,	B_STOP_ALERT))->Go();
 				Lock();
 				Quit();
 			}
@@ -306,9 +314,7 @@ VMWAddOnsCleanupWindow::MessageReceived(BMessage* message)
 
 extern "C" status_t filling_thread(void* data) {
 	VMWAddOnsCleanupWindow* main_window = (VMWAddOnsCleanupWindow*)data;
-	
-	printf("filling_thread : in_progress = %d\n", main_window->in_progress);
-	
+		
 	dev_t device = main_window->to_cleanup[main_window->in_progress];
 	BVolume volume(device);
 	BFile* space_sucking_file = main_window->space_sucking_file;

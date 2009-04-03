@@ -3,8 +3,8 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#ifndef VMWTRAY_H
-#define VMWTRAY_H
+#ifndef VMW_TRAY_H
+#define VMW_TRAY_H
 
 #include <Bitmap.h>
 #include <Clipboard.h>

@@ -3,11 +3,7 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#include "VMWAddOns.h"
 #include "VMWAddOnsTray.h"
-#include "VMWAddOnsSettings.h"
-#include "vmwbackdoor.h"
-#include "icons.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +14,11 @@
 #include <Roster.h>
 #include <MenuItem.h>
 #include <Mime.h>
+
+#include "VMWAddOns.h"
+#include "VMWAddOnsSettings.h"
+#include "vmwbackdoor.h"
+#include "icons.h"
 
 VMWAddOnsSettings settings;
 
@@ -236,8 +237,9 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 				"Disk shrinking will operate on all auto-expanding disks "
 				"attached to this virtual machine.\nFor best results it is "
 				"recommanded to clean up free space on these disks before starting "
-				"the process.", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, "Clean up disks" B_UTF8_ELLIPSIS, 
-				B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT))->Go();
+				"the process.", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, 
+					"Clean up disks" B_UTF8_ELLIPSIS, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, 
+						B_INFO_ALERT))->Go();
 			
 			if (result <= 0) // Cancel or quit
 				return;

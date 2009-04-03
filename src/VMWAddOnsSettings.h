@@ -4,8 +4,8 @@
 */
 
 
-#ifndef VMWSETTINGS_H
-#define VMWSETTINGS_H
+#ifndef VMW_SETTINGS_H
+#define VMW_SETTINGS_H
 
 #include <File.h>
 #include <Message.h>

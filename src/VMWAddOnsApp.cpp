@@ -3,16 +3,17 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#include "VMWAddOns.h"
 #include "VMWAddOnsApp.h"
-#include "VMWAddOnsTray.h"
-#include "vmwbackdoor.h"
 
 #include <stdio.h>
 
 #include <Alert.h>
 #include <Deskbar.h>
 #include <Roster.h>
+
+#include "VMWAddOns.h"
+#include "VMWAddOnsTray.h"
+#include "vmwbackdoor.h"
 
 //#define PERSISTENT_TRAY
 

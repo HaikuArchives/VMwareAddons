@@ -3,15 +3,13 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#include "VMWAddOns.h"
 #include "VMWMouseFilter.h"
 
 #include <Debug.h>
 #include <Roster.h>
 #include <NodeMonitor.h>
 
-#include <errno.h>
-
+#include "VMWAddOns.h"
 #include "vmwbackdoor.h"
 
 extern "C" _EXPORT BInputServerFilter* instantiate_input_filter();
@@ -60,7 +58,7 @@ VMWMouseFilter::Filter(BMessage* message, BList* /*outlist*/)
 	if (!activated)
 		return B_DISPATCH_MESSAGE;
 	
-	if (message->what != B_MOUSE_MOVED && message->what != B_MOUSE_DOWN
+	if (message->what != B_MOUSE_MOVED && message->what != B_MOUSE_DOWN 
 		&& message->what != B_MOUSE_UP && !message->HasFloat("be:delta_x"))
 		return B_DISPATCH_MESSAGE;
 	

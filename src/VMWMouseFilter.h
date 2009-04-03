@@ -8,10 +8,10 @@
 
 //#define DEBUG 1
 
-#include "VMWAddOnsSettings.h"
-
 #include <Looper.h>
 #include <InputServerFilter.h>
+
+#include "VMWAddOnsSettings.h"
 
 class VMWSettingsWatcher: public BLooper {
 public:

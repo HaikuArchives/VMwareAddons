@@ -4,12 +4,11 @@
 */
 
 #include "VMWAddOnsSettings.h"
-#include "VMWAddOns.h"
 
 #include <FindDirectory.h>
 #include <Path.h>
 
-#include <stdio.h>
+#include "VMWAddOns.h"
 
 VMWAddOnsSettings::VMWAddOnsSettings()
 {
@@ -19,7 +18,6 @@ VMWAddOnsSettings::VMWAddOnsSettings()
 VMWAddOnsSettings::VMWAddOnsSettings(node_ref* nref)
 {
 	Reload();
-	printf("GetNodeRef: %ld\n", settings_file.GetNodeRef(nref));
 }
 
 VMWAddOnsSettings::~VMWAddOnsSettings()

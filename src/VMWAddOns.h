@@ -3,8 +3,8 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#ifndef VMW_H
-#define VMW_H
+#ifndef VMW_ADDONS_H
+#define VMW_ADDONS_H
 
 // Application constants
 #define APP_SIG "application/x-vnd.VinDuv.VMWAddOns"

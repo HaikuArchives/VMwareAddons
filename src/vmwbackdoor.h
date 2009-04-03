@@ -1,5 +1,5 @@
 /*
-	vmwbackdoor.c
+	vmwbackdoor.h
 
 	From the VMW Tools,	Copyright (c) 2006 Ken Kato
 	http://chitchat.at.infoseek.co.jp/vmware/vmtools.html
@@ -9,8 +9,9 @@
 #ifndef _VMW_H
 #define _VMW_H 1
 
-#include <SupportDefs.h>
 #include <stdint.h>
+
+#include <SupportDefs.h>
 
 #define VMWARE_MAGIC		0x564D5868UL	/* Backdoor magic number (VMXh)	*/
 #define VMWARE_CMD_PORT		0x5658			/* Backdoor command port (VX)	*/

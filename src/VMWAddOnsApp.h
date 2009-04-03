@@ -3,8 +3,8 @@
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
-#ifndef VMWAPP_H
-#define VMWAPP_H
+#ifndef VMW_APP_H
+#define VMW_APP_H
 
 #include <Application.h>
 
