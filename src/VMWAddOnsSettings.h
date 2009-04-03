@@ -14,7 +14,7 @@
 class VMWAddOnsSettings {
 public:
 				VMWAddOnsSettings();
-				VMWAddOnsSettings(node_ref* nref);
+				VMWAddOnsSettings(node_ref* ref);
 	virtual		~VMWAddOnsSettings();
 	
 	void		Reload();

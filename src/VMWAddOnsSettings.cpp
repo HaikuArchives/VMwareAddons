@@ -18,6 +18,7 @@ VMWAddOnsSettings::VMWAddOnsSettings()
 VMWAddOnsSettings::VMWAddOnsSettings(node_ref* nref)
 {
 	Reload();
+	settings_file.GetNodeRef(nref);
 }
 
 VMWAddOnsSettings::~VMWAddOnsSettings()
