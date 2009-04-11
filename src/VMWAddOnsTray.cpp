@@ -17,7 +17,6 @@
 
 #include "VMWAddOns.h"
 #include "VMWAddOnsSettings.h"
-#include "vmwbackdoor.h"
 #include "icons.h"
 
 VMWAddOnsSettings settings;
@@ -42,9 +41,7 @@ VMWAddOnsTray::VMWAddOnsTray(BMessage* mdArchive)
 
 void
 VMWAddOnsTray::init()
-{
-	entry_ref ref;
-	
+{	
 	system_clipboard = new BClipboard("system");
 	clipboard_poller = NULL;
 	window_open = false;
@@ -84,6 +81,8 @@ VMWAddOnsTray::~VMWAddOnsTray()
 void
 VMWAddOnsTray::GetPreferredSize(float *w, float *h)
 {
+	if (w == NULL)
+		return;
 	*w = B_MINI_ICON;
 	*h = B_MINI_ICON;
 }
@@ -190,8 +189,7 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 			}
 			
 			// Clear the host clipboard
-			VMClipboardPaste(NULL, NULL);
-			VMClipboardCopy(data, len);
+			backdoor.SetHostClipboard(data, len);
 			
 			system_clipboard->Unlock();
 		}
@@ -200,12 +198,9 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		case CLIPBOARD_POLL:
 		{
 			char* data;
-			ssize_t len;
+			size_t len;
 			
-			if (VMClipboardPaste(&data, &len) != B_OK)
-				return;
-			
-			if (len < 0)
+			if (backdoor.GetHostClipboard(&data, &len) != B_OK)
 				return;
 		
 			BMessage* clip_message = NULL;
@@ -237,7 +232,9 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 				"Disk shrinking will operate on all auto-expanding disks "
 				"attached to this virtual machine.\nFor best results it is "
 				"recommanded to clean up free space on these disks before starting "
-				"the process.", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, 
+				"the process.\n"
+				"NOTE : Cleaning FAT32 volumes with more than 4GB of free space is "
+				"currently unsupported.", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, 
 					"Clean up disks" B_UTF8_ELLIPSIS, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, 
 						B_INFO_ALERT))->Go();
 			
@@ -261,7 +258,16 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 				"This may take a long time ; the virtual machine will be "
 				"suspended during the process.", "Cancel", "OK"))->Go();
 			if (result == 1) {
-				
+				// Wait for things to calm down a bit before freezing the VM 
+				snooze(500000);
+				if (backdoor.OpenRPCChannel() == B_OK) {
+					backdoor.SendMessage("disk.shrink");
+					backdoor.CloseRPCChannel();
+				} else {
+					(new BAlert(TRAY_NAME,
+						"Unable to communicate with VMWare. Your VMWare version may be too old.",
+						"Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
+				}
 			}
 		}	
 		break;

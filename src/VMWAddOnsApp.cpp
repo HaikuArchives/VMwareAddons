@@ -13,7 +13,6 @@
 
 #include "VMWAddOns.h"
 #include "VMWAddOnsTray.h"
-#include "vmwbackdoor.h"
 
 //#define PERSISTENT_TRAY
 
@@ -23,7 +22,7 @@ VMWAddOnsApp::VMWAddOnsApp()
 }
 
 VMWAddOnsApp::~VMWAddOnsApp()
-{	
+{
 }
 
 void VMWAddOnsApp::ReadyToRun()
@@ -33,7 +32,7 @@ void VMWAddOnsApp::ReadyToRun()
 	// Avoid multiplying the trays...
 	db.RemoveItem(TRAY_NAME);
 	
-	if (VMCheckVirtual() == B_OK) {
+	if (backdoor.InVMware()) {
 #ifdef PERSISTENT_TRAY
 		entry_ref ref;
 		be_roster->FindApp(APP_SIG, &ref);

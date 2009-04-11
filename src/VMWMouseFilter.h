@@ -6,12 +6,11 @@
 #ifndef VMW_MOUSE_FILTER_H
 #define VMW_MOUSE_FILTER_H
 
-//#define DEBUG 1
-
 #include <Looper.h>
 #include <InputServerFilter.h>
 
 #include "VMWAddOnsSettings.h"
+#include "VMWBackdoor.h"
 
 class VMWSettingsWatcher: public BLooper {
 public:
@@ -31,6 +30,7 @@ public:
 
 private:
 	VMWSettingsWatcher*			settings_watcher;
+	VMWBackdoor					backdoor;
 };
 
 #endif	/* VMW_MOUSE_FILTER_H */

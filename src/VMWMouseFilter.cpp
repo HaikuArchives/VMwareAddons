@@ -5,12 +5,10 @@
 
 #include "VMWMouseFilter.h"
 
-#include <Debug.h>
 #include <Roster.h>
 #include <NodeMonitor.h>
 
 #include "VMWAddOns.h"
-#include "vmwbackdoor.h"
 
 extern "C" _EXPORT BInputServerFilter* instantiate_input_filter();
 
@@ -25,12 +23,9 @@ instantiate_input_filter()
 
 status_t VMWMouseFilter::InitCheck()
 {
-	if (VMCheckVirtual() == B_OK) {
-		PRINT(("VMWMouseFilter: VMWare detected, filter enabled.\n"));
+	if (backdoor.InVMware())
 		return B_NO_ERROR;
-	}
 	
-	PRINT(("VMWMouseFilter: filter disabled (not in VMWare, or unsupported version ?).\n"));
 	return B_ERROR;
 }
 
@@ -53,8 +48,6 @@ VMWMouseFilter::~VMWMouseFilter()
 filter_result
 VMWMouseFilter::Filter(BMessage* message, BList* /*outlist*/)
 {
-	int16_t cursor_x, cursor_y;
-	
 	if (!activated)
 		return B_DISPATCH_MESSAGE;
 	
@@ -62,13 +55,9 @@ VMWMouseFilter::Filter(BMessage* message, BList* /*outlist*/)
 		&& message->what != B_MOUSE_UP && !message->HasFloat("be:delta_x"))
 		return B_DISPATCH_MESSAGE;
 	
-	if(VMGetCursorPos(&cursor_x, &cursor_y) != B_OK // Error in VMW backdoor
-		|| cursor_x < 0) // Cursor is offscreen 
-		return B_DISPATCH_MESSAGE;
-	
 	message->RemoveName("be:delta_x");
 	message->RemoveName("be:delta_y");
-	message->ReplacePoint("where", BPoint(cursor_x, cursor_y));
+	backdoor.SyncCursor(message);
 
 	return B_DISPATCH_MESSAGE;
 }

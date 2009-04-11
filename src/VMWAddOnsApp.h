@@ -8,11 +8,15 @@
 
 #include <Application.h>
 
+#include "VMWBackdoor.h"
+
 class VMWAddOnsApp: public BApplication {
 public:
 					VMWAddOnsApp();
-					~VMWAddOnsApp();
+	virtual			~VMWAddOnsApp();
 	virtual void	ReadyToRun();
+	
+	VMWBackdoor backdoor;
 };
 
 #endif

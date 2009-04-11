@@ -31,9 +31,13 @@ public:
 	dev_t*			to_cleanup;
 	int				count; // of items of the above array
 	int				in_progress;
-	BFile*			space_sucking_file;
 
 private:
+	status_t		WriteToFile(BFile* file, char* buffer);
+	status_t		FillDirectory(BDirectory* root_directory, char* buffer);
+	status_t		FillingThread();
+	static int32	StartFilling(void* data);
+	
 	BView*			parent_view;
 	
 	BView*			disks_view;
@@ -49,7 +53,5 @@ private:
 	
 	thread_id th;
 };
-
-extern "C" status_t filling_thread(void* data);
 
 #endif

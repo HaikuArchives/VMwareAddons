@@ -15,6 +15,7 @@
 
 #include "VMWAddOnsSettings.h"
 #include "VMWAddOnsCleanupWindow.h"
+#include "VMWBackdoor.h"
 
 class VMWAddOnsTray: public BView {
 public:
@@ -46,6 +47,8 @@ private:
 	BMessageRunner*			clipboard_poller;
 	
 	VMWAddOnsCleanupWindow*	cleanup_window;	
+	
+	VMWBackdoor				backdoor;
 };
 
 class VMWAddOnsMenu: public BPopUpMenu {
