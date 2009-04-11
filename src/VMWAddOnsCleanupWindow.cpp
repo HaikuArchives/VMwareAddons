@@ -301,6 +301,7 @@ status_t
 VMWAddOnsCleanupWindow::WriteToFile(BFile* file, char* buffer)
 {
 	ulong current_size = 0; // In MB
+	ulong write_progress = 0; // In bytes
 	
 	do {
 		ssize_t written = file->Write(buffer, BUF_SIZE);
@@ -310,8 +311,11 @@ VMWAddOnsCleanupWindow::WriteToFile(BFile* file, char* buffer)
 		
 		if (written < BUF_SIZE)
 			return B_DEVICE_FULL;
-			
-		if (current_size % MB == 0) { // We wrote a MB
+		
+		write_progress += written;
+		
+		if (write_progress >= MB) { // We wrote a MB
+			write_progress %= MB;
 			current_size++;
 			file->Sync();
 			this->PostMessage(UPDATE_PROGRESS);
@@ -325,7 +329,7 @@ status_t
 VMWAddOnsCleanupWindow::FillDirectory(BDirectory* root_directory, char* buffer)
 {
 	BFile* space_sucking_files[MAX_FILES];
-	uint files_count;
+	uint files_count = 0;
 	status_t ret;
 	
 	for (uint i = 0 ; i < MAX_FILES ; i++) {
