@@ -158,8 +158,8 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		case B_ABOUT_REQUESTED:
 		{
 			BAlert* alert = new BAlert("about", 
-				APP_NAME ", version " APP_VERSION " © 2009, Vincent Duvert\n"
-				"VMW Backdoor © 2006, Ken Kato\n"
+				APP_NAME ", version " APP_VERSION "\n"
+				"© 2009, Vincent Duvert\n"
 				"Distributed under the terms of the MIT License.", "OK", NULL, NULL,
                 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
 	        alert->SetShortcut(0, B_ENTER);
@@ -232,9 +232,7 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 				"Disk shrinking will operate on all auto-expanding disks "
 				"attached to this virtual machine.\nFor best results it is "
 				"recommanded to clean up free space on these disks before starting "
-				"the process.\n"
-				"NOTE : Cleaning FAT32 volumes with more than 4GB of free space is "
-				"currently unsupported.", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, 
+				"the process.\n", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, 
 					"Clean up disks" B_UTF8_ELLIPSIS, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, 
 						B_INFO_ALERT))->Go();
 			
@@ -277,7 +275,6 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		break;
 		
 		default:
-			message->PrintToStream();
 			BView::MessageReceived(message);
 		break;
 	}

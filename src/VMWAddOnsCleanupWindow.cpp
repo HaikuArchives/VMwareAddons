@@ -23,10 +23,10 @@
 #define SPACING 8
 
 #define CLEANUP_SELECTION 'clSe'
-#define CANCEL_OPERATION 'bof!'
-#define STOP_OPERATION 'non!'
+#define CANCEL_OPERATION 'ccOp'
+#define STOP_OPERATION 'stOp'
 #define CONT_SHRINK 'coSh'
-#define UPDATE_PROGRESS 'plop'
+#define UPDATE_PROGRESS 'upPr'
 
 #define MB (1024 * 1024)
 #define BUF_SIZE 8192
@@ -249,7 +249,7 @@ VMWAddOnsCleanupWindow::MessageReceived(BMessage* message)
 				Hide();
 				
 				// TODO : Check why sending a message to the parent view does not seems to work
-				parent_view->MessageReceived(new BMessage(START_SHRINK));
+				printf("SendMessage : %ld\n", be_app_messenger.SendMessage(START_SHRINK, parent_view));
 				Lock();
 				Quit();
 				return;
@@ -280,9 +280,7 @@ VMWAddOnsCleanupWindow::MessageReceived(BMessage* message)
 		break;
 		
 		case STOP_OPERATION:
-			kill_thread(th);
-			Lock();
-			Quit();
+			send_data(th, STOP_OPERATION, NULL, 0);
 		break;
 		
 		case CANCEL_OPERATION:
@@ -291,7 +289,6 @@ VMWAddOnsCleanupWindow::MessageReceived(BMessage* message)
 		break;
 		
 		default:
-			message->PrintToStream();
 			BWindow::MessageReceived(message);
 		break;
 	}
@@ -302,6 +299,7 @@ VMWAddOnsCleanupWindow::WriteToFile(BFile* file, char* buffer)
 {
 	ulong current_size = 0; // In MB
 	ulong write_progress = 0; // In bytes
+	thread_id me = find_thread(NULL);
 	
 	do {
 		ssize_t written = file->Write(buffer, BUF_SIZE);
@@ -320,6 +318,10 @@ VMWAddOnsCleanupWindow::WriteToFile(BFile* file, char* buffer)
 			file->Sync();
 			this->PostMessage(UPDATE_PROGRESS);
 		}
+		
+		if (has_data(me))
+			return B_INTERRUPTED;
+		
 	} while(current_size < MAX_FILE_SIZE);
 	
 	return B_OK;
@@ -372,12 +374,12 @@ VMWAddOnsCleanupWindow::FillingThread() {
 	
 	status_t ret = FillDirectory(&root_directory, buffer);
 	
-	// I know this should not happen, but I wouldn't like to display a dialog saying
-	// "An error occurred : no error" :-p
-	if (ret == B_OK)
-		ret = B_ERROR;
-
-	if (ret != B_DEVICE_FULL) {
+	if (ret == B_INTERRUPTED) {
+		this->PostMessage(CANCEL_OPERATION);
+		return ret;
+	}
+	
+	if (ret != B_DEVICE_FULL && ret != B_OK) {
 		char name[B_FILE_NAME_LENGTH];
 		volume.GetName(name);
 		(new BAlert("Error", (BString("An error occurred while cleaning ”") << name
