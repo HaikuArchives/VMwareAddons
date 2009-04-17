@@ -23,7 +23,8 @@ VMWAddOnsStatusWindow::VMWAddOnsStatusWindow()
 	status_view = new BView(Bounds(), "cleanup view", B_FOLLOW_ALL_SIDES, B_WILL_DRAW);
 	status_view->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	
-	progress_bar = new BStatusBar(BRect(SPACING, SPACING, 200, 45), NULL, "Starting...");
+	progress_bar = new BStatusBar(BRect(SPACING, SPACING, 200, 45), NULL, "Starting cleanup process, please wait...");
+	progress_bar->ResizeToPreferred();
 	
 	status_view->AddChild(progress_bar);
 	

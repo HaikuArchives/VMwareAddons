@@ -14,7 +14,7 @@
 #include "VMWAddOnsTray.h"
 
 #define MB (1024 * 1024)
-#define BUF_SIZE 8192
+#define BUF_SIZE (MB / 2)
 #define MAX_FILES 200
 #define MAX_FILE_SIZE 4096 // In MB
 
@@ -136,8 +136,8 @@ VMWAddOnsCleanup::WriteToFile(BFile* file, char* buffer)
 		
 		write_progress += written;
 		
-		if (write_progress >= MB) { // We wrote a MB
-			write_progress %= MB;
+		while (write_progress >= MB) { // We wrote at least an MB
+			write_progress -= MB;
 			current_size++;
 			file->Sync();
 			status_window->PostMessage(new BMessage(UPDATE_PROGRESS));
