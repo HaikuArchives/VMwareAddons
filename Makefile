@@ -15,7 +15,7 @@ vmwmouse: VMWMouseFilter.o VMWAddOnsSettings.o VMWBackdoor.o
 	$(CXX) -o "$@" $^ $(LDFLAGS2)
 	mimeset "$@"
 
-VMWAddOns: VMWAddOnsApp.o VMWAddOnsTray.o VMWAddOnsSettings.o VMWBackdoor.o VMWAddOnsCleanupWindow.o
+VMWAddOns: VMWAddOnsApp.o VMWAddOnsTray.o VMWAddOnsSettings.o VMWBackdoor.o VMWAddOnsCleanup.o VMWAddOnsSelectWindow.o VMWAddOnsStatusWindow.o
 	$(CXX) -o "$@" $^ $(LDFLAGS1)
 
 %.o: src/%.cpp

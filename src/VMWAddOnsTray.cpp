@@ -17,6 +17,7 @@
 
 #include "VMWAddOns.h"
 #include "VMWAddOnsSettings.h"
+#include "VMWAddOnsCleanup.h"
 #include "icons.h"
 
 VMWAddOnsSettings settings;
@@ -44,7 +45,7 @@ VMWAddOnsTray::init()
 {	
 	system_clipboard = new BClipboard("system");
 	clipboard_poller = NULL;
-	window_open = false;
+	cleanup_in_process = false;
 	
 	icon_all = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_all->SetBits(pic_act_yy, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
@@ -71,11 +72,6 @@ VMWAddOnsTray::~VMWAddOnsTray()
 	
 	delete system_clipboard;
 	delete clipboard_poller;
-	
-	if (window_open) {
-		cleanup_window->Lock();
-		cleanup_window->Close();
-	}
 }
 
 void
@@ -228,51 +224,14 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		
 		case SHRINK_DISKS:
 		{
-			int32 result = (new BAlert("Shrink disks",
-				"Disk shrinking will operate on all auto-expanding disks "
-				"attached to this virtual machine.\nFor best results it is "
-				"recommanded to clean up free space on these disks before starting "
-				"the process.\n", "Cancel", "Shrink now" B_UTF8_ELLIPSIS, 
-					"Clean up disks" B_UTF8_ELLIPSIS, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, 
-						B_INFO_ALERT))->Go();
-			
-			if (result <= 0) // Cancel or quit
-				return;
-			
-			if (result == 2) { // Clean up disks
-				if (window_open) // The selection window is already open (should not happen)
-					return;
-				cleanup_window = new VMWAddOnsCleanupWindow(this);
-				cleanup_window->Show();
-				window_open = true;
-				return;
+			puts("Spawning thread");
+			thread_id th = spawn_thread(VMWAddOnsCleanup::Start,
+				"vmw cleanup", B_LOW_PRIORITY, this);
+			if (th > 0) {
+				cleanup_in_process = true;
+				resume_thread(th);
 			}
 		}
-		
-		case START_SHRINK: // User clicked Shrink now (see above), or the cleanup process completed
-		{
-			int32 result = (new BAlert("Shrink disks",
-				"The shrink operation will now be launched in VMWare."
-				"This may take a long time ; the virtual machine will be "
-				"suspended during the process.", "Cancel", "OK"))->Go();
-			if (result == 1) {
-				// Wait for things to calm down a bit before freezing the VM 
-				snooze(500000);
-				if (backdoor.OpenRPCChannel() == B_OK) {
-					backdoor.SendMessage("disk.shrink");
-					backdoor.CloseRPCChannel();
-				} else {
-					(new BAlert(TRAY_NAME,
-						"Unable to communicate with VMWare. Your VMWare version may be too old.",
-						"Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
-				}
-			}
-		}	
-		break;
-		
-		case SHRINK_WINDOW_CLOSED:
-			window_open = false;
-		break;
 		
 		default:
 			BView::MessageReceived(message);
@@ -300,12 +259,26 @@ VMWAddOnsTray::SetClipboardSharing(bool enable)
 	}
 }
 
-long removeFromDeskbar(void *)
+int32
+removeFromDeskbar(void *)
 {	
 	BDeskbar db;
 	db.RemoveItem(TRAY_NAME);
 		
 	return 0;
+}
+
+void
+VMWAddOnsTray::StartShrink()
+{
+	if (backdoor.OpenRPCChannel() == B_OK) {
+		backdoor.SendMessage("disk.shrink");
+		backdoor.CloseRPCChannel();
+	} else {
+		(new BAlert(TRAY_NAME,
+			"Unable to communicate with VMWare. Your VMWare version may be too old.",
+			"Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
+	}
 }
 
 void
@@ -343,7 +316,7 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray)
 	menu_item->SetMarked(settings.GetBool("clip_enabled", true));
 	AddItem(menu_item);
 
-	if (!tray->window_open)
+	if (!tray->cleanup_in_process)
 		AddItem(new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
 	
 	AddSeparatorItem();

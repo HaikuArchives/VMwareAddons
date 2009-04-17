@@ -31,7 +31,8 @@ public:
 	virtual status_t		Archive(BMessage *data, bool deep) const;
 	static VMWAddOnsTray*	Instantiate(BMessage *data);
 
-	bool					window_open;
+	void					StartShrink();
+	bool					cleanup_in_process;
 
 private:
 	void					init();
