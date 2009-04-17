@@ -26,7 +26,7 @@ VMWAddOnsCleanup::~VMWAddOnsCleanup()
 {
 }
 
-void
+status_t
 VMWAddOnsCleanup::ThreadLoop()
 {
 	devices_count = 0;
@@ -34,7 +34,7 @@ VMWAddOnsCleanup::ThreadLoop()
 	select_window->Go(this);
 	
 	if (devices_count == 0)
-		return;
+		return B_INTERRUPTED;
 	
 	status_window = new VMWAddOnsStatusWindow();
 	status_window->Show();
@@ -74,6 +74,8 @@ VMWAddOnsCleanup::ThreadLoop()
 	free(buffer);
 	status_window->Lock();
 	status_window->Quit();
+	
+	return B_OK;
 }
 
 int32
@@ -96,7 +98,10 @@ VMWAddOnsCleanup::Start(void* data)
 			
 	if (result == 2) { // Clean up disks
 		VMWAddOnsCleanup* cleanup_th = new VMWAddOnsCleanup;
-		cleanup_th->ThreadLoop();
+		if (cleanup_th->ThreadLoop() == B_INTERRUPTED) {
+			parent_tray->cleanup_in_process = false;
+			return B_INTERRUPTED;
+		}
 	}
 	
 	result = (new BAlert("Shrink disks",

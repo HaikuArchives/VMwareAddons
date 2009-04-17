@@ -72,7 +72,7 @@ VMWAddOnsStatusWindow::MessageReceived(BMessage* message)
 			
 			off_t size = size_read;
 
-			progress_bar->Reset((BString("Cleaning “") << name << "”" B_UTF8_ELLIPSIS).String());
+			progress_bar->Reset((BString("Cleaning up “") << name << "”" B_UTF8_ELLIPSIS).String());
 			progress_bar->SetMaxValue(size);
 		}
 		

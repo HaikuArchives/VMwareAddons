@@ -20,7 +20,7 @@ public:
 	uint			devices_count;
 
 private:
-	void			ThreadLoop();
+	status_t		ThreadLoop();
 	status_t		WriteToFile(BFile* file, char* buffer);
 	status_t		FillDirectory(BDirectory* root_directory, char* buffer);
 	VMWAddOnsStatusWindow* status_window;
