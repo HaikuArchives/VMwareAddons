@@ -1,18 +1,30 @@
-VMW Add-ons v0.1ß
+VMW Add-ons v1.0
 By Vincent Duvert <vincent.duvert@free.fr>
 VMW backdoor code by Ken Kato (http://chitchat.at.infoseek.co.jp/vmware/)
 
-VMW Add-ons are a set of tools to enhance the use of Haiku in a VMWare virtual machine.
-It currently allows :
+VMW Add-ons are a set of tools to enhance interaction between Haiku, running in a virtual machine, and the host operating system. It is like the official VMware tools on Windows or Linux.
+It currently allows:
  - Clipboard sharing between Haiku and the host OS
- - Mouse sharing : the mouse can seamlessly enter and quit the VM window.
+ - Mouse sharing: the mouse can seamlessly enter and quit the VM window.
+ - Disk compacting: Starts the VMware "shrink" process, which reduce the size of "auto-expanding" virtual disks attached to the virtual machine. The free space on disks is cleaned up previously, in order to get better results.
 
-Installation :
+Installation:
 1) Drag and drop the "vmvmouse" file in the archive on the folder "Drop vmwmouse here" ;-)
 2) Start the "VMWAddOns" application. It will not show any window, but put a small icon into the Deskbar, allowing you to control sharing options. It will automatically restart at each boot.
 VMWAddOns can be placed anywhere, but storing in in the "apps" folder of the root folder is usually a good idea.
 
-Licence :
+Known bugs and limitations:
+• If you have a volume with more than 800GB of free space, not all free space will be cleaned up on this volume (only 800GB) before the shrink process.
+• When mouse sharing is activated, the cursor speed and acceleration are given by the host operating system (setting them in the "Mouse" control panel will have no effect)/
+
+If you encounter a bug or have a feature request, please use the tracker at :
+http://dev.osdrawer.net/projects/vmwaddons/issues
+
+Planned features:
+• Shared folders support (or maybe file drag-n-drop, or both)
+• Virtual machine window resizing
+
+Licence:
 The MIT Licence
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
