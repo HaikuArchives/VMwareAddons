@@ -61,8 +61,6 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 	
 	volume_roster->StartWatching(this);
 	volumes_list->Select(0, volumes_list->CountItems() - 1);
-
-	cleanup_button->SetEnabled(volumes_list->CurrentSelection() >= 0);
 	
 	disks_view->AddChild(new BScrollView(NULL, volumes_list,
          B_FOLLOW_ALL_SIDES, 0, false, true));
@@ -74,6 +72,8 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 	cleanup_button->MoveTo(w + SPACING - _W(cleanup_button), y);
 	
 	disks_view->AddChild(cleanup_button);
+	
+	cleanup_button->SetEnabled(volumes_list->CurrentSelection() >= 0);
 	
 	cancel_button = new BButton(BRect(0, 0, 0, 0), NULL, "Cancel", new BMessage(CANCEL_OPERATION),
 		B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
