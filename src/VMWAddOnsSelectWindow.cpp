@@ -60,7 +60,9 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 	}
 	
 	volume_roster->StartWatching(this);
-	volumes_list->Select(0, volumes_list->CountItems() - 1);	
+	volumes_list->Select(0, volumes_list->CountItems() - 1);
+
+	cleanup_button->SetEnabled(volumes_list->CurrentSelection() >= 0);
 	
 	disks_view->AddChild(new BScrollView(NULL, volumes_list,
          B_FOLLOW_ALL_SIDES, 0, false, true));
