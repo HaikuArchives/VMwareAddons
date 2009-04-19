@@ -8,7 +8,6 @@
 
 #include <VolumeRoster.h>
 #include <ListView.h>
-#include <StringItem.h>
 #include <StringView.h>
 #include <View.h>
 #include <Window.h>

@@ -8,6 +8,7 @@
 
 #include <Alert.h>
 #include <Directory.h>
+#include <String.h>
 #include <SupportDefs.h>
 
 #include "VMWAddOnsSelectWindow.h"

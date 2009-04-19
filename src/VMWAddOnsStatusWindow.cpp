@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include <Screen.h>
+#include <String.h>
 
 #define _H(x) static_cast<int>((x)->Frame().Height())
 #define _W(x) static_cast<int>((x)->Frame().Width())

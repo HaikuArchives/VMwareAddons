@@ -3,7 +3,7 @@ CXX=g++
 XRES=xres
 CFLAGS=-I. -g -W -Wall -Wno-multichar -ansi -pedantic -Werror
 LDFLAGS1=-lbe 
-LDFLAGS2=-nostart -Xlinker -soname=vmwmouse -Xlinker --no-undefined /boot/system/servers/input_server -lbe
+LDFLAGS2=-nostart -Xlinker -soname=vmwmouse -Xlinker --no-undefined /system/servers/input_server -lbe
 
 all: menu_app vmwmouse
 
