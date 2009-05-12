@@ -8,8 +8,6 @@
 #include <FindDirectory.h>
 #include <Path.h>
 
-#include "VMWAddOns.h"
-
 VMWAddOnsSettings::VMWAddOnsSettings()
 {
 	Reload();

@@ -11,6 +11,8 @@
 #include <Message.h>
 #include <SupportDefs.h>
 
+#define SETTINGS_FILE_NAME "VinDuv.VMWAddOns_settings"
+
 class VMWAddOnsSettings {
 public:
 				VMWAddOnsSettings();

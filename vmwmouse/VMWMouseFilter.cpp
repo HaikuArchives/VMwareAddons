@@ -8,8 +8,6 @@
 #include <Roster.h>
 #include <NodeMonitor.h>
 
-#include "VMWAddOns.h"
-
 extern "C" _EXPORT BInputServerFilter* instantiate_input_filter();
 
 VMWAddOnsSettings* settings;
