@@ -7,7 +7,7 @@
 ## Application Specific Settings ---------------------------------------------
 
 # specify the name of the binary
-NAME= vmwaddons
+NAME= vmwmouse
 
 # specify the type of binary
 #	APP:	Application
@@ -98,6 +98,12 @@ SYMBOLS =
 #	if TRUE will allow application to be run from
 #	a source-level debugger
 DEBUGGER = 
+
+ifeq ($(RELEASE),1)
+	OPTIMIZE= FULL
+	DEFINES= PERSISTENT_TRAY
+	DEBUGGER= FALSE
+endif
 
 #	specify additional compiler flags for all files
 COMPILER_FLAGS =

@@ -75,7 +75,7 @@ LOCAL_INCLUDE_PATHS = ../shared_sources/
 
 #	specify the level of optimization that you desire
 #	NONE, SOME, FULL
-OPTIMIZE= 
+OPTIMIZE= NONE
 
 #	specify any preprocessor symbols to be defined.  The symbols will not
 #	have their values set automatically; you must supply the value (if any)
@@ -98,7 +98,13 @@ SYMBOLS =
 #	specify debug settings
 #	if TRUE will allow application to be run from
 #	a source-level debugger
-DEBUGGER = 
+DEBUGGER = TRUE
+
+ifeq ($(RELEASE),1)
+	OPTIMIZE= FULL
+	DEFINES= PERSISTENT_TRAY
+	DEBUGGER= FALSE
+endif
 
 #	specify additional compiler flags for all files
 COMPILER_FLAGS =
