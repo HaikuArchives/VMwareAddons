@@ -207,7 +207,9 @@ VMWBackdoor::InVMware() const
 
 status_t
 VMWBackdoor::SyncCursor(BMessage* cursor_message)
-{	
+{
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
 	regs_t regs;
 	backdoor_call(&regs, VMW_BACK_GET_CURSOR, 0);
 	
@@ -228,6 +230,8 @@ VMWBackdoor::SyncCursor(BMessage* cursor_message)
 status_t
 VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
 {
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
 	regs_t regs;
 	backdoor_call(&regs, VMW_BACK_GET_CLIP_LENGTH, 0);
 	
@@ -247,7 +251,8 @@ VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
 	if (length > 0xFFFF) // No data (or an error occurred)
 		return B_ERROR;
 	
-	char* buffer = (char*)malloc(length + 1);
+	char* buffer = NULL;
+	buffer = (char*)malloc(length + 1);
 	
 	if (buffer == NULL)
 		return B_NO_MEMORY;
@@ -275,13 +280,14 @@ VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
 status_t
 VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 {
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
 	GetHostClipboard(NULL, NULL);
 	
 	regs_t regs;
 	backdoor_call(&regs, VMW_BACK_SET_CLIP_LENGTH, text_length);
 	
 	if (regs.eax != 0) {
-		printf("Error setting clipboard.\n");
 		return B_ERROR;
 	}
 	
@@ -304,7 +310,8 @@ VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 status_t
 VMWBackdoor::OpenRPCChannel()
 {
-	puts("Backdoor: Opening RPC channel...");
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
 	if (rpc_opened)
 		return B_ERROR;
 	
@@ -325,6 +332,8 @@ VMWBackdoor::OpenRPCChannel()
 status_t
 VMWBackdoor::SendMessage(const char* message)
 {
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
 	size_t length;
 	
 	if (message == NULL)
@@ -358,13 +367,13 @@ VMWBackdoor::SendMessage(const char* message)
 	
 	release_sem(backdoor_access);
 	
-	printf("%s : sent “%s”\n", __FUNCTION__, message);
-	
 	return B_OK;
 }
 
 char* VMWBackdoor::GetMessage()
 {
+	if (!in_vmware) return NULL;
+	
 	if (acquire_sem(backdoor_access) != B_OK)
 		return NULL;
 	
@@ -406,14 +415,14 @@ char* VMWBackdoor::GetMessage()
 	
 	data[length] = '\0';
 	
-	printf("%s : got “%s”\n", __FUNCTION__, data);
-	
 	return data;
 }
 
 status_t
 VMWBackdoor::CloseRPCChannel()
 {
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
 	if (!rpc_opened)
 		return B_ERROR;
 	

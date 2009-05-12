@@ -42,6 +42,7 @@ private:
 	BBitmap*				icon_mouse;
 	BBitmap*				icon_clipboard;
 	BBitmap*				icon_none;
+	BBitmap*				icon_disabled;
 	
 	BClipboard*				system_clipboard;
 	BMessageRunner*			clipboard_poller;
@@ -51,7 +52,7 @@ private:
 
 class VMWAddOnsMenu: public BPopUpMenu {
 public:
-					VMWAddOnsMenu(VMWAddOnsTray* tray);
+					VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware);
 	virtual			~VMWAddOnsMenu();
 };
 

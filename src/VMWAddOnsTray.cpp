@@ -59,6 +59,9 @@ VMWAddOnsTray::init()
 	icon_none = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_none->SetBits(pic_act_nn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
 	
+	icon_disabled = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
+	icon_disabled->SetBits(pic_disabled, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
+	
 	SetDrawingMode(B_OP_ALPHA);
 	SetFlags(Flags() | B_WILL_DRAW);
 }
@@ -69,6 +72,7 @@ VMWAddOnsTray::~VMWAddOnsTray()
 	delete icon_mouse;
 	delete icon_clipboard;
 	delete icon_none;
+	delete icon_disabled;
 	
 	delete system_clipboard;
 	delete clipboard_poller;
@@ -105,6 +109,11 @@ VMWAddOnsTray::Draw(BRect /*update_rect*/) {
 	else SetHighColor(189, 186, 189, 255);
 	FillRect(tray_bounds);
 	
+	if (!backdoor.InVMware()) {
+		DrawBitmap(icon_disabled);
+		return;
+	}
+	
 	if (settings.GetBool("mouse_enabled", true)) {
 		if (settings.GetBool("clip_enabled", true))
 			DrawBitmap(icon_all);
@@ -122,7 +131,7 @@ void
 VMWAddOnsTray::MouseDown(BPoint where)
 {
 	ConvertToScreen(&where);
-	VMWAddOnsMenu* menu = new VMWAddOnsMenu(this);
+	VMWAddOnsMenu* menu = new VMWAddOnsMenu(this, backdoor.InVMware());
 	menu->Go(where, true, true, ConvertToScreen(Bounds()), true);
 }
 
@@ -224,7 +233,6 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		
 		case SHRINK_DISKS:
 		{
-			puts("Spawning thread");
 			thread_id th = spawn_thread(VMWAddOnsCleanup::Start,
 				"vmw cleanup", B_LOW_PRIORITY, this);
 			if (th > 0) {
@@ -242,7 +250,8 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 void
 VMWAddOnsTray::AttachedToWindow()
 {
-	SetClipboardSharing(settings.GetBool("clip_enabled", true));
+	if (backdoor.InVMware())
+		SetClipboardSharing(settings.GetBool("clip_enabled", true));
 }
 
 void
@@ -276,7 +285,7 @@ VMWAddOnsTray::StartShrink()
 		backdoor.CloseRPCChannel();
 	} else {
 		(new BAlert(TRAY_NAME,
-			"Unable to communicate with VMWare. Your VMWare version may be too old.",
+			"Unable to communicate with VMWare. Your VMWare version may be too old. Please start the process manually if your VMware version allows it.",
 			"Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
 	}
 }
@@ -301,23 +310,29 @@ VMWAddOnsTray::RemoveMyself(bool askUser)
 	}
 }
 
-VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray)
+VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware)
 	:BPopUpMenu("tray_menu", false, false)
 {
 	BMenuItem* menu_item;
-
+	
 	SetFont(be_plain_font);
 	
-	menu_item = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
-	menu_item->SetMarked(settings.GetBool("mouse_enabled", true));;
-	AddItem(menu_item);
+	if (in_vmware) {
+		menu_item = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
+		menu_item->SetMarked(settings.GetBool("mouse_enabled", true));;
+		AddItem(menu_item);
 	
-	menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
-	menu_item->SetMarked(settings.GetBool("clip_enabled", true));
-	AddItem(menu_item);
+		menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
+		menu_item->SetMarked(settings.GetBool("clip_enabled", true));
+		AddItem(menu_item);
 
-	if (!tray->cleanup_in_process)
-		AddItem(new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
+		if (!tray->cleanup_in_process)
+			AddItem(new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
+	} else {
+		menu_item = new BMenuItem("Not running in VMware", NULL);
+		menu_item->SetEnabled(false);
+		AddItem(menu_item);
+	}
 	
 	AddSeparatorItem();
 	

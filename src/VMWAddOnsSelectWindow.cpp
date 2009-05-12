@@ -61,13 +61,14 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 	
 	volume_roster->StartWatching(this);
 	volumes_list->Select(0, volumes_list->CountItems() - 1);
-	
+
 	disks_view->AddChild(new BScrollView(NULL, volumes_list,
          B_FOLLOW_ALL_SIDES, 0, false, true));
 	
 	cleanup_button = new BButton(BRect(0, 0, 0, 0), NULL, "Cleanup selection",
 		new BMessage(CLEANUP_SELECTION), B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
 	cleanup_button->MakeDefault(true);
+	cleanup_button->SetEnabled(volumes_list->CurrentSelection() >= 0);
 	cleanup_button->ResizeToPreferred();
 	cleanup_button->MoveTo(w + SPACING - _W(cleanup_button), y);
 	

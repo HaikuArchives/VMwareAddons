@@ -31,21 +31,14 @@ void VMWAddOnsApp::ReadyToRun()
 	
 	// Avoid multiplying the trays...
 	db.RemoveItem(TRAY_NAME);
-	
-	if (backdoor.InVMware()) {
+
 #ifdef PERSISTENT_TRAY
-		entry_ref ref;
-		be_roster->FindApp(APP_SIG, &ref);
-		db.AddItem(&ref);
+	entry_ref ref;
+	be_roster->FindApp(APP_SIG, &ref);
+	db.AddItem(&ref);
 #else
-		db.AddItem(new VMWAddOnsTray);
+	db.AddItem(new VMWAddOnsTray);
 #endif
-	} else {
-		(new BAlert(TRAY_NAME,
-			"Unable to access the VMW backdoor.\n"
-			"You are probably not running this program in a VMWare virtual machine.",
-			"Quit", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
-	}
 	
 	// We're done
 	be_app->Lock();
@@ -56,5 +49,4 @@ int main()
 {
 	VMWAddOnsApp *app = new VMWAddOnsApp();
 	app->Run();	
-	//puts("hello,world");
 }
