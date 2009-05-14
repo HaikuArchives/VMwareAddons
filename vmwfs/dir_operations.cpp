@@ -11,13 +11,36 @@ typedef struct {
 status_t
 vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perms)
 {
-	return B_UNSUPPORTED;
+	VMWNode* node = (VMWNode*)parent->private_node;
+	
+	char* path = node->GetChildPath(name);
+	if (path == NULL)
+		return B_NO_MEMORY;
+
+	status_t ret = shared_folders->CreateDir(path, perms);
+	free(path);
+	
+	return ret;
 }
 
 status_t
 vmwfs_remove_dir(fs_volume* volume, fs_vnode* parent, const char* name)
 {
-	return B_UNSUPPORTED;
+	VMWNode* node = (VMWNode*)parent->private_node;
+	
+	char* path = node->GetChildPath(name);
+	if (path == NULL)
+		return B_NO_MEMORY;
+
+	status_t ret = shared_folders->DeleteDir(path);
+	free(path);
+	
+	if (ret != B_OK)
+		return ret;
+
+	node->DeleteChildIfExists(name);
+		
+	return B_OK;
 }
 
 status_t

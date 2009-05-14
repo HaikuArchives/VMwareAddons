@@ -5,7 +5,36 @@
 status_t
 vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, int perms, void** _cookie, ino_t* _newVnodeID)
 {
-	return B_UNSUPPORTED;
+	VMWNode* dir_node = (VMWNode*)dir->private_node;
+	
+	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
+	if (cookie == NULL)
+		return B_NO_MEMORY;
+	
+	char* path = dir_node->GetChildPath(name);
+	if (path == NULL) {
+		free(cookie);
+		return B_NO_MEMORY;
+	}
+	
+	status_t ret = shared_folders->OpenFile(path, openMode | O_CREAT, cookie);
+	free(path);
+	
+	if (ret != B_OK) {
+		free(cookie);
+		return ret;
+	}
+	
+	*_cookie = cookie;
+	
+	VMWNode* new_node = dir_node->GetChild(name);
+	if (new_node == NULL)
+		return B_NO_MEMORY;
+	
+	*_newVnodeID = new_node->GetInode();
+		
+	return B_OK;
+
 }
 
 status_t
@@ -63,5 +92,10 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 status_t
 vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const void* buffer, size_t* length)
 {
-	return B_UNSUPPORTED;
+	if (pos < 0)
+		return B_BAD_VALUE;
+	
+	status_t ret = shared_folders->WriteFile(*(file_handle*)cookie, pos, buffer, length);
+	
+	return ret;
 }
