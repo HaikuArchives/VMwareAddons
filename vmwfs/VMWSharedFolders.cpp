@@ -11,6 +11,7 @@
 #include <string.h>
 
 #define ASSERT(x) if (!(x)) panic("ASSERT FAILED : " #x);
+#define CALLED() dprintf("vmwfs: %s was called.\n", __FUNCTION__)
 
 #include <KernelExport.h>
 
@@ -41,6 +42,7 @@ enum {
 
 VMWSharedFolders::VMWSharedFolders()
 {
+	CALLED();
 	if (!backdoor.InVMware() || backdoor.OpenRPCChannel() != B_OK) {
 		init_check = B_ERROR;
 		return;
@@ -51,12 +53,14 @@ VMWSharedFolders::VMWSharedFolders()
 
 VMWSharedFolders::~VMWSharedFolders()
 {
+	CALLED();
 	backdoor.CloseRPCChannel();
 }
 
 status_t
 VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -120,6 +124,7 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 status_t
 VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* buffer, uint32* length)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -165,17 +170,20 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* buffer, uint
 status_t
 VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* buffer, uint32* length)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
 	// 2) Handle (32-bits, in BuildCommand)
-	// 3) Offset (64-bits)
-	// 4) Length (32-bits)
+	// 3) ???? (8-bits)
+	// 4) Offset (64-bits)
+	// 5) Length (32-bits)
 	
-	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_64 + SIZE_32 + *length;
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32 + *length;
 	
 	char* command = (char*)malloc(cmd_length);
 	off_t pos = BuildCommand(command, VMW_CMD_WRITE_FILE, handle);
+	SET_8(command, pos, 0);
 	SET_64(command, pos, offset);
 	SET_32(command, pos, *length);
 	memcpy(command + pos, buffer, *length);
@@ -211,6 +219,7 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* buffe
 status_t
 VMWSharedFolders::CloseFile(file_handle handle)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -233,6 +242,7 @@ VMWSharedFolders::CloseFile(file_handle handle)
 status_t
 VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -277,6 +287,7 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 status_t
 VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t max_length)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -330,6 +341,7 @@ VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t
 status_t
 VMWSharedFolders::CloseDir(folder_handle handle)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -351,6 +363,7 @@ VMWSharedFolders::CloseDir(folder_handle handle)
 status_t
 VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bool* is_dir)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -379,6 +392,11 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 	if (received == NULL)
 		return B_ERROR;
 	
+	if (length == 10) {
+		free(received);
+		return B_ENTRY_NOT_FOUND;
+	}	
+	
 	if (length != 55) {
 		free(received);
 		return B_ERROR;
@@ -400,6 +418,7 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 status_t
 VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attributes, uint32 mask)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -451,6 +470,7 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 status_t
 VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -499,6 +519,7 @@ VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 status_t
 VMWSharedFolders::Delete(const char* path, bool is_dir)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -543,18 +564,21 @@ VMWSharedFolders::Delete(const char* path, bool is_dir)
 status_t
 VMWSharedFolders::DeleteFile(const char* path)
 {
+	CALLED();
 	return Delete(path, false);
 }
 
 status_t
 VMWSharedFolders::DeleteDir(const char* path)
 {
+	CALLED();
 	return Delete(path, true);
 }
 
 status_t
 VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 {
+	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
 	// 1) Command number (32-bits, in BuildCommand)
@@ -570,6 +594,8 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 		+ SIZE_32 + path_dest_length + 1;
 	
 	char* command = (char*)malloc(cmd_length);
+	
+	dprintf("Move: moving %s to %s...\n", path_orig, path_dest);
 	
 	off_t pos = BuildCommand(command, VMW_CMD_MOVE_FILE, path_orig_length);
 	CopyPath(path_orig, command + pos, &pos);
@@ -606,6 +632,7 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 off_t
 VMWSharedFolders::BuildCommand(char* cmd_buffer, uint32 command, uint32 param)
 {
+	CALLED();
 	const char start_bytes[] = { 'f', ' ', '\0', '\0', '\0', '\0' };
 	
 	memcpy(cmd_buffer, start_bytes, sizeof(start_bytes));
@@ -621,6 +648,7 @@ VMWSharedFolders::BuildCommand(char* cmd_buffer, uint32 command, uint32 param)
 status_t
 VMWSharedFolders::ConvertStatus(int vmw_status)
 {
+	CALLED();
 	switch (vmw_status) {
 		case 0:		return B_OK;
 		case 1:		return B_ENTRY_NOT_FOUND;

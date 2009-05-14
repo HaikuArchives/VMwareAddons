@@ -5,6 +5,7 @@
 status_t
 vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, int perms, void** _cookie, ino_t* _newVnodeID)
 {
+	CALLED();
 	VMWNode* dir_node = (VMWNode*)dir->private_node;
 	
 	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
@@ -33,13 +34,14 @@ vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, i
 	
 	*_newVnodeID = new_node->GetInode();
 		
-	return B_OK;
+	return get_vnode(volume, new_node->GetInode(), NULL);
 
 }
 
 status_t
 vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 {
+	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	
 	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
@@ -68,12 +70,14 @@ vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 status_t
 vmwfs_close(fs_volume* volume, fs_vnode* vnode, void* cookie)
 {
+	CALLED();
 	return shared_folders->CloseFile(*(file_handle*)cookie);
 }
 
 status_t
 vmwfs_free_cookie(fs_volume* volume, fs_vnode* vnode, void* cookie)
 {
+	CALLED();
 	free(cookie);
 	return B_OK;
 }
@@ -81,6 +85,7 @@ vmwfs_free_cookie(fs_volume* volume, fs_vnode* vnode, void* cookie)
 status_t
 vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* buffer, size_t* length)
 {
+	CALLED();
 	if (pos < 0)
 		return B_BAD_VALUE;
 	
@@ -92,6 +97,7 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 status_t
 vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const void* buffer, size_t* length)
 {
+	CALLED();
 	if (pos < 0)
 		return B_BAD_VALUE;
 	

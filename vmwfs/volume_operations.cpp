@@ -9,6 +9,7 @@ VMWNode* root_node;
 status_t
 vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args, ino_t *_rootID)
 {
+	CALLED();
 	if (device != NULL)
 		return B_BAD_VALUE;
 	
@@ -37,6 +38,7 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 status_t
 vmwfs_unmount(fs_volume* volume)
 {
+	CALLED();
 	delete root_node;
 	delete shared_folders;
 	
@@ -46,6 +48,7 @@ vmwfs_unmount(fs_volume* volume)
 status_t
 vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 {
+	CALLED();
 	info->flags = B_FS_IS_PERSISTENT;
 	info->block_size = FAKE_BLOCK_SIZE;
 	info->io_size = 4096;
@@ -63,6 +66,7 @@ vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 status_t
 vmwfs_write_fs_info(fs_volume* volume, const struct fs_info* info, uint32 mask)
 {
+	CALLED();
 	// TODO : Store volume name ?
 	return B_OK;
 }
@@ -70,6 +74,7 @@ vmwfs_write_fs_info(fs_volume* volume, const struct fs_info* info, uint32 mask)
 status_t
 vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32* _flags, bool reenter)
 {
+	CALLED();
 	vnode->private_node = NULL;
 	vnode->ops = &vnode_ops;
 	_flags = 0;

@@ -8,6 +8,7 @@
 status_t
 vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 {
+	CALLED();
 	VMWNode* dir_node = (VMWNode*)dir->private_node;
 	
 	char* path = dir_node->GetChildPath(name);
@@ -29,6 +30,7 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 status_t
 vmwfs_get_vnode_name(fs_volume* volume, fs_vnode* vnode, char* buffer, size_t bufferSize)
 {
+	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	
 	strncpy(buffer, node->GetName(), bufferSize);
@@ -39,30 +41,74 @@ vmwfs_get_vnode_name(fs_volume* volume, fs_vnode* vnode, char* buffer, size_t bu
 status_t
 vmwfs_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 {
+	CALLED();
 	return B_OK;
 }
 
 status_t
 vmwfs_remove_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 {
-	return B_UNSUPPORTED;
+	CALLED();
+	VMWNode* node = (VMWNode*)vnode->private_node;
+	VMWNode* parent = node->GetChild("..");
+	
+	char* name = strdup(node->GetName());
+	
+	if (name == NULL)
+		return B_NO_MEMORY;	
+
+	parent->DeleteChildIfExists(name);
+	
+	free(name);
+		
+	return B_OK;
 }
 
 status_t
 vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 {
-	return B_UNSUPPORTED;
+	CALLED();
+	VMWNode* node = (VMWNode*)dir->private_node;
+	
+	char* path = node->GetChildPath(name);
+	if (path == NULL)
+		return B_NO_MEMORY;
+
+	status_t ret = shared_folders->DeleteFile(path);
+	free(path);
+	
+	return ret;
 }
 
 status_t
 vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnode* toDir, const char* toName)
 {
-	return B_UNSUPPORTED;
+	CALLED();
+	VMWNode* src_dir = (VMWNode*)fromDir->private_node;
+	VMWNode* dst_dir = (VMWNode*)toDir->private_node;
+	
+	char* src_path = src_dir->GetChildPath(fromName);
+	if (src_path == NULL)
+		return B_NO_MEMORY;
+
+	char* dst_path = dst_dir->GetChildPath(toName);
+	if (dst_path == NULL) {
+		free(src_path);
+		return B_NO_MEMORY;
+	}
+
+	status_t ret = shared_folders->Move(src_path, dst_path);
+	
+	free(src_path);
+	free(dst_path);
+	
+	return ret;
 }
 
 status_t
 vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 {
+	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	
 	char* path = node->GetPath();
@@ -90,6 +136,7 @@ vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 status_t
 vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 {
+	CALLED();
 	VMWNode* root = (VMWNode*)volume->private_volume;
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	
@@ -151,6 +198,7 @@ enum write_stat_mask {
 status_t
 vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, uint32 statMask)
 {
+	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	
 	char* path = node->GetPath();
