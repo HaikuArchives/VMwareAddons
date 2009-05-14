@@ -64,10 +64,8 @@ VMWNode::GetChild(const char* name)
 	vmw_list_item* item = children;
 	
 	while (item != NULL) {
-		if (strcmp(item->node->name, name) == 0) {
-			dprintf("GetChild : found ”%s”, returning...\n", name);
+		if (strcmp(item->node->name, name) == 0)
 			return item->node;
-		}
 		
 		if (item->next == NULL)
 			break;
@@ -77,15 +75,12 @@ VMWNode::GetChild(const char* name)
 	
 	vmw_list_item* new_item = (vmw_list_item*)malloc(sizeof(vmw_list_item));
 	
-	if (new_item == NULL) {
-		dprintf("GetChild : unable to allocate memory for ”%s” (new_item)...\n", name);
+	if (new_item == NULL)
 		return NULL;
-	}
 	
 	new_item->next = NULL;
 	new_item->node = new VMWNode(name, this);
 	if (new_item->node == NULL) {
-		dprintf("GetChild : unable to allocate memory for ”%s” (node)...\n", name);
 		free(new_item);
 		return NULL;
 	}

@@ -10,11 +10,34 @@
 #include <stdarg.h>
 #include <string.h>
 
+#define ASSERT(x) if (!(x)) panic("ASSERT FAILED : " #x);
+
 #include <KernelExport.h>
 
+enum {
+	VMW_CMD_OPEN_FILE = 0,
+	VMW_CMD_READ_FILE,
+	VMW_CMD_WRITE_FILE,
+	VMW_CMD_CLOSE_FILE,
+	VMW_CMD_OPEN_DIR,
+	VMW_CMD_READ_DIR,
+	VMW_CMD_CLOSE_DIR,
+	VMW_CMD_GET_ATTR,
+	VMW_CMD_SET_ATTR,
+	VMW_CMD_NEW_DIR,
+	VMW_CMD_DEL_FILE,
+	VMW_CMD_DEL_DIR,
+	VMW_CMD_MOVE_FILE
+};
+	
 #define SET_8(var, offset, val) *(uint8*)((var) + offset) = (uint8)val; offset += 1
 #define SET_32(var, offset, val) *(uint32*)((var) + offset) = (uint32)val; offset += 4
 #define SET_64(var, offset, val) *(uint64*)((var) + offset) = (uint64)val; offset += 8
+
+#define SIZE_8 1
+#define SIZE_32 4
+#define SIZE_64 8
+#define SIZE_START 6
 
 VMWSharedFolders::VMWSharedFolders()
 {
@@ -34,11 +57,21 @@ VMWSharedFolders::~VMWSharedFolders()
 status_t
 VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 {
-	size_t path_length = strlen(path);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Access mode : 0 => RO, 1 => WO, 2 => RW (32-bits, in BuildCommand)
+	// 3) Open mode (32-bits)
+	// 4) Permissions : 1 => exec, 2 => write, 4 => read (8-bits)
+	// 5) The path length, with ending null (32-bits)
+	// 6) The path itself (with / path delimiters replaced by null characters)
 	
-	char* command = (char*)malloc(path_length + 24);
+	const size_t path_length = strlen(path);
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
 	
-	off_t pos = BuildCommand(command, 0, open_mode & 3);
+	char* command = (char*)malloc(cmd_length);
+	
+	off_t pos = BuildCommand(command, VMW_CMD_OPEN_FILE, open_mode & 3);
 
 	uint32 vmw_openmode;
 	if (open_mode & O_TRUNC == O_TRUNC) {
@@ -55,9 +88,11 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 	SET_32(command, pos, vmw_openmode);
 	SET_8(command, pos, 0x06);
 	SET_32(command, pos, path_length);
-	CopyPath(path, command + pos);
+	CopyPath(path, command + pos, &pos);
 	
-	status_t ret = backdoor.SendMessage(command, false, path_length + 24);
+	ASSERT(pos == cmd_length);
+	
+	status_t ret = backdoor.SendMessage(command, false, cmd_length);
 	free(command);
 	
 	if (ret != B_OK)
@@ -85,13 +120,23 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 status_t
 VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* buffer, uint32* length)
 {
-	char* command = (char*)malloc(26);
-	off_t pos = BuildCommand(command, 1, handle);
-	SET_32(command, pos, index);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Handle (32-bits, in BuildCommand)
+	// 3) Offset (64-bits)
+	// 4) Length (32-bits)
+	
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_64 + SIZE_32;
+	
+	char* command = (char*)malloc(cmd_length);
+	off_t pos = BuildCommand(command, VMW_CMD_READ_FILE, handle);
 	SET_64(command, pos, offset);
 	SET_32(command, pos, *length);
 
-	status_t ret = backdoor.SendMessage(command, false, 26);
+	ASSERT(pos == cmd_length);
+
+	status_t ret = backdoor.SendMessage(command, false, cmd_length);
 	free(command);
 
 	if (ret != B_OK)
@@ -111,8 +156,6 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* buffer, uint
 	ret = ConvertStatus(*(uint32*)(received + 6));
 	*length = *(uint32*)(received + 10);
 	
-	dprintf("ReadFile : offset %llu, length = %lu\n", offset, *length); 
-	
 	memcpy(buffer, received + 14, *length);
 	free(received);
 	
@@ -122,10 +165,20 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* buffer, uint
 status_t
 VMWSharedFolders::CloseFile(file_handle handle)
 {
-	char* command = (char*)malloc(14);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Handle (32-bits, in BuildCommand)
 	
-	BuildCommand(command, 3, handle);
-	status_t ret = backdoor.SendMessage(command, true, 14);
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32;
+	
+	char* command = (char*)malloc(cmd_length);
+	
+	size_t pos = BuildCommand(command, VMW_CMD_CLOSE_FILE, handle);
+	
+	ASSERT(pos == cmd_length);
+	
+	status_t ret = backdoor.SendMessage(command, true, cmd_length);
 	free(command);
 	
 	return ret;
@@ -134,14 +187,23 @@ VMWSharedFolders::CloseFile(file_handle handle)
 status_t
 VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 {
-	size_t path_length = strlen(path);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Path length (32-bits, in BuildCommand)
+	// 3) The path itself (with / path delimiters replaced by null characters)
 	
-	char* command = (char*)malloc(path_length + 15);
+	const size_t path_length = strlen(path);
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 	
-	off_t pos = BuildCommand(command, 4, path_length);
-	CopyPath(path, command + pos);
+	char* command = (char*)malloc(cmd_length);
 	
-	status_t ret = backdoor.SendMessage(command, false, path_length + 15);
+	off_t pos = BuildCommand(command, VMW_CMD_OPEN_DIR, path_length);
+	CopyPath(path, command + pos, &pos);
+	
+	ASSERT(pos == cmd_length);
+	
+	status_t ret = backdoor.SendMessage(command, false, cmd_length);
 	free(command);
 	
 	if (ret != B_OK)
@@ -169,11 +231,21 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 status_t
 VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t max_length)
 {
-	char* command = (char*)malloc(18);
-	off_t pos = BuildCommand(command, 5, handle);
-	SET_32(command, pos, index);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Handle (32-bits, in BuildCommand)
+	// 3) Max name length (32-bits)
 	
-	status_t ret = backdoor.SendMessage(command, false, 18);
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32;
+	
+	char* command = (char*)malloc(cmd_length);
+	off_t pos = BuildCommand(command, VMW_CMD_READ_DIR, handle);
+	SET_32(command, pos, index);
+
+	ASSERT(pos == cmd_length);
+		
+	status_t ret = backdoor.SendMessage(command, false, cmd_length);
 	free(command);
 	
 	if (ret != B_OK)
@@ -212,9 +284,19 @@ VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t
 status_t
 VMWSharedFolders::CloseDir(folder_handle handle)
 {
-	char* command = (char*)malloc(14);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Handle (32-bits, in BuildCommand)
 	
-	BuildCommand(command, 6, handle);
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32;
+	
+	char* command = (char*)malloc(cmd_length);
+	
+	size_t pos = BuildCommand(command, VMW_CMD_CLOSE_DIR, handle);
+	
+	ASSERT(pos == cmd_length);
+
 	status_t ret = backdoor.SendMessage(command, true, 14);
 	free(command);
 	return ret;
@@ -223,14 +305,23 @@ VMWSharedFolders::CloseDir(folder_handle handle)
 status_t
 VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bool* is_dir)
 {
-	size_t path_length = strlen(path);
+	// Command string :
+	// 0) Magic value (6 bytes, in BuildCommand)
+	// 1) Command number (32-bits, in BuildCommand)
+	// 2) Path length (32-bits, in BuildCommand)
+	// 3) The path itself (with / path delimiters replaced by null characters)
 	
-	char* command = (char*)malloc(path_length + 15);
+	const size_t path_length = strlen(path);
+	const size_t cmd_length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 	
-	off_t pos = BuildCommand(command, 7, path_length);
-	CopyPath(path, command + pos);
+	char* command = (char*)malloc(cmd_length);
 	
-	status_t ret = backdoor.SendMessage(command, false, path_length + 15);
+	off_t pos = BuildCommand(command, VMW_CMD_GET_ATTR, path_length);
+	CopyPath(path, command + pos, &pos);
+	
+	ASSERT(pos == cmd_length);
+	
+	status_t ret = backdoor.SendMessage(command, false, cmd_length);
 	free(command);
 	
 	if (ret != B_OK)
@@ -290,11 +381,14 @@ VMWSharedFolders::ConvertStatus(int vmw_status)
 }
 
 void
-VMWSharedFolders::CopyPath(const char* path, char* dest)
+VMWSharedFolders::CopyPath(const char* path, char* dest, off_t* pos)
 {	
 	while (*path != '\0') {
 		*dest = (*path == '/' ? '\0' : *path);
 		dest++;
 		path++;
+		(*pos)++;
 	}
+	*dest = '\0';
+	(*pos)++;
 }

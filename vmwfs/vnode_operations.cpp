@@ -10,8 +10,6 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 	
 	char* path = dir_node->GetChildPath(name);
 	
-	dprintf("vmwfs_lookup: looking up path “%s”...\n", path);
-	
 	status_t ret = shared_folders->GetAttributes(path);	
 	free(path);
 	if (ret != B_OK)
@@ -105,8 +103,7 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	if (ret != B_OK)
 		return ret;
 	
-	dprintf("vmwfs_read_stat : %s has permissions %d\n", node->GetName(), attributes.perms);
-	
+
 	stat->st_dev = root->GetInode();
 	stat->st_ino = node->GetInode();
 	

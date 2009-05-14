@@ -24,9 +24,9 @@ typedef struct vmw_attributes {
 	uint8	perms;
 } __attribute__((packed)) vmw_attributes;
 
-#define CAN_READ(x) ((x).perms & 0x04 == 0x04)
-#define CAN_WRITE(x) ((x).perms & 0x02 == 0x02)
-#define CAN_EXEC(x) ((x).perms & 0x01 == 0x01)
+#define CAN_READ(x) (((x).perms & 0x04) == 0x04)
+#define CAN_WRITE(x) (((x).perms & 0x02) == 0x02)
+#define CAN_EXEC(x) (((x).perms & 0x01) == 0x01)
 
 class VMWSharedFolders {
 public:
@@ -45,7 +45,7 @@ public:
 private:
 	static off_t	BuildCommand(char* cmd_buffer, uint32 command, uint32 param);
 	status_t		ConvertStatus(int vmw_status);
-	void			CopyPath(const char* path, char* dest);
+	void			CopyPath(const char* path, char* dest, off_t* pos);
 
 	VMWBackdoor		backdoor;
 	status_t		init_check;
