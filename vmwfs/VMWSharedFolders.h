@@ -65,7 +65,7 @@ private:
 	status_t		ConvertStatus(int vmw_status);
 	void			CopyPath(const char* path, char* dest, off_t* pos);
 
-	VMWBackdoor		backdoor;
+	VMWCoreBackdoor	backdoor;
 	status_t		init_check;
 };
 

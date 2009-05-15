@@ -31,8 +31,8 @@ TYPE= DRIVER
 #	are included from different directories.  Also note that spaces
 #	in folder names do not work well with this makefile.
 SRCS= dir_operations.cpp file_operations.cpp kernel_interface.cpp \
-	partitions_detect VMWBackdoor.cpp VMWNode.cpp VMWSharedFolders.cpp \
-	vnode_operations.cpp volume_operations.cpp
+	partitions_detect ../shared_sources/VMWCoreBackdoor.cpp VMWNode.cpp \
+	VMWSharedFolders.cpp vnode_operations.cpp volume_operations.cpp
 
 
 #	specify the resource files to use
@@ -76,7 +76,7 @@ LOCAL_INCLUDE_PATHS =
 
 #	specify the level of optimization that you desire
 #	NONE, SOME, FULL
-OPTIMIZE= 
+OPTIMIZE= SOME
 
 #	specify any preprocessor symbols to be defined.  The symbols will not
 #	have their values set automatically; you must supply the value (if any)
@@ -94,7 +94,7 @@ WARNINGS = ALL
 #	specify whether image symbols will be created
 #	so that stack crawls in the debugger are meaningful
 #	if TRUE symbols will be created
-SYMBOLS = 
+SYMBOLS = TRUE
 
 #	specify debug settings
 #	if TRUE will allow application to be run from

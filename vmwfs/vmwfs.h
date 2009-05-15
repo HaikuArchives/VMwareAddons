@@ -16,6 +16,7 @@ extern VMWSharedFolders* shared_folders;
 extern fs_volume_ops volume_ops;
 extern fs_vnode_ops vnode_ops;
 
-#define CALLED() dprintf("vmwfs: %s was called.\n", __FUNCTION__)
+//#define CALLED() dprintf("vmwfs: %s was called.\n", __FUNCTION__)
+#define CALLED() 
 
 #endif

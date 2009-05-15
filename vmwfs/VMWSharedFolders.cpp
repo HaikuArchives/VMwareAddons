@@ -11,7 +11,8 @@
 #include <string.h>
 
 #define ASSERT(x) if (!(x)) panic("ASSERT FAILED : " #x);
-#define CALLED() dprintf("vmwfs: %s was called.\n", __FUNCTION__)
+//#define CALLED() dprintf("vmwfs: %s was called.\n", __FUNCTION__)
+#define CALLED() 
 
 #include <KernelExport.h>
 
@@ -656,7 +657,13 @@ VMWSharedFolders::ConvertStatus(int vmw_status)
 		case 4:		return B_FILE_EXISTS;
 		case 6:		return B_DIRECTORY_NOT_EMPTY;
 		case 8:		return B_NAME_IN_USE;
-		default:	return B_ERROR;
+		// 10 is returned when trying to change permissions of a folder.
+		// Since the permissions are changed, I guess this is a success status...
+		case 10:	return B_OK;
+		default:
+			dprintf("ConvertStatus: unknown status %d.\n", vmw_status);
+			return B_ERROR;
+		
 	}
 }
 
