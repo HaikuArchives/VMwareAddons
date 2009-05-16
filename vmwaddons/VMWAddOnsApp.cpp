@@ -11,6 +11,8 @@
 #include <Deskbar.h>
 #include <Roster.h>
 
+#include <string.h>
+
 #include "VMWAddOns.h"
 #include "VMWAddOnsTray.h"
 

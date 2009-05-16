@@ -6,6 +6,8 @@
 
 VMWNode* root_node;
 
+vint32 mount_count = 0;
+
 status_t
 vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args, ino_t *_rootID)
 {
@@ -13,25 +15,35 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 	if (device != NULL)
 		return B_BAD_VALUE;
 	
+	if (atomic_add(&mount_count, 1))
+		return B_UNSUPPORTED;
+	
 	shared_folders = new VMWSharedFolders();
 	status_t ret = shared_folders->InitCheck();
 	if (ret != B_OK) {
+		atomic_add(&mount_count, -1);
 		delete shared_folders;
 		return ret;
 	}
 	
 	root_node = new VMWNode("", NULL);	
 	
-	if (root_node == NULL)
+	if (root_node == NULL) {
+		atomic_add(&mount_count, -1);
 		return B_NO_MEMORY;
+	}
 	
 	*_rootID = root_node->GetInode();
 	
 	_vol->private_volume = root_node;
 	_vol->ops = &volume_ops;
 	
-	return publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
+	ret = publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
 			&vnode_ops, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR | S_IWGRP | S_IWOTH | S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH, 0);
+	if (ret != B_OK)
+		atomic_add(&mount_count, -1);
+
+	return ret;
 }
 
 status_t
@@ -40,6 +52,8 @@ vmwfs_unmount(fs_volume* volume)
 	CALLED();
 	delete root_node;
 	delete shared_folders;
+	
+	atomic_add(&mount_count, -1);
 	
 	return B_OK;
 }

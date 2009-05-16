@@ -281,7 +281,7 @@ void
 VMWAddOnsTray::StartShrink()
 {
 	if (backdoor.OpenRPCChannel() == B_OK) {
-		backdoor.SendMessage("disk.shrink");
+		backdoor.SendMessage("disk.shrink", true);
 		backdoor.CloseRPCChannel();
 	} else {
 		(new BAlert(TRAY_NAME,

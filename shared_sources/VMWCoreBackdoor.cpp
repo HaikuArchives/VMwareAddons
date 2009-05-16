@@ -62,7 +62,7 @@ VMWCoreBackdoor::BackdoorRPCCall(regs_t* regs, ulong command, ulong param)
 	
 	regs->eax = param;
 	regs->ecx = command;
-	regs->edx = rpc_channel;
+	regs->edx = rpc_channel | VMW_BACK_RPC_PORT;
 	regs->esi = rpc_cookie1;
 	regs->edi = rpc_cookie2;
 	
@@ -86,7 +86,7 @@ VMWCoreBackdoor::BackdoorRPCSend(regs_t* regs, char* data, size_t length)
 	regs->eax = rpc_cookie1;
 	
 	regs->ecx = length;
-	regs->edx = rpc_channel;
+	regs->edx = rpc_channel | VMW_BACK_RPC_PORT2;
 	regs->esi = (ulong)data;
 	regs->edi = rpc_cookie2;
 	
@@ -116,7 +116,7 @@ VMWCoreBackdoor::BackdoorRPCGet(regs_t* regs, char* data, size_t length)
 	regs->eax = rpc_cookie2;
 	
 	regs->ecx = length;
-	regs->edx = rpc_channel;
+	regs->edx = rpc_channel | VMW_BACK_RPC_PORT2;
 	regs->esi = rpc_cookie1;
 	regs->edi = (ulong)data;
 	
@@ -175,7 +175,8 @@ VMWCoreBackdoor::VMWCoreBackdoor()
 #endif
 
 	if (!in_vmware)
-		return;
+			return;
+
 	backdoor_access = create_sem(1, "vmware backdoor lock");
 }
 
@@ -206,7 +207,7 @@ VMWCoreBackdoor::OpenRPCChannel()
 		return B_ERROR;
 	
 	rpc_opened = true;
-	rpc_channel = regs.edx | VMW_BACK_RPC_PORT;
+	rpc_channel = regs.edx;
 	rpc_cookie1 = regs.esi;
 	rpc_cookie2 = regs.edi;
 	
@@ -251,7 +252,7 @@ VMWCoreBackdoor::SendMessage(const char* message, bool check_status, size_t leng
 		char* response = GetMessage();
 		if (response == NULL)
 			return B_ERROR;
-                
+
 		char status = response[0];
                 
 		free(response);
