@@ -24,7 +24,7 @@ public:
 private:
 	BView*			status_view;
 	BButton*		stop_button;
-	
+
 	thread_id th;
 };
 

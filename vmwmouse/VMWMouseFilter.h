@@ -23,9 +23,9 @@ class VMWMouseFilter: public BInputServerFilter {
 public:
 								VMWMouseFilter();
 	virtual						~VMWMouseFilter();
-	
+
 	virtual	status_t			InitCheck();
-	
+
 	virtual	filter_result		Filter(BMessage* message, BList* outList);
 
 private:

@@ -30,7 +30,7 @@ VMWAddOnsApp::~VMWAddOnsApp()
 void VMWAddOnsApp::ReadyToRun()
 {
 	BDeskbar db;
-	
+
 	// Avoid multiplying the trays...
 	db.RemoveItem(TRAY_NAME);
 
@@ -41,7 +41,7 @@ void VMWAddOnsApp::ReadyToRun()
 #else
 	db.AddItem(new VMWAddOnsTray);
 #endif
-	
+
 	// We're done
 	be_app->Lock();
 	be_app->Quit();
@@ -50,5 +50,5 @@ void VMWAddOnsApp::ReadyToRun()
 int main()
 {
 	VMWAddOnsApp *app = new VMWAddOnsApp();
-	app->Run();	
+	app->Run();
 }

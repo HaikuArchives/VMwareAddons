@@ -23,7 +23,7 @@ status_t VMWMouseFilter::InitCheck()
 {
 	if (backdoor.InVMware())
 		return B_NO_ERROR;
-	
+
 	return B_ERROR;
 }
 
@@ -48,11 +48,11 @@ VMWMouseFilter::Filter(BMessage* message, BList* /*outlist*/)
 {
 	if (!activated)
 		return B_DISPATCH_MESSAGE;
-	
-	if (message->what != B_MOUSE_MOVED && message->what != B_MOUSE_DOWN 
+
+	if (message->what != B_MOUSE_MOVED && message->what != B_MOUSE_DOWN
 		&& message->what != B_MOUSE_UP && !message->HasFloat("be:delta_x"))
 		return B_DISPATCH_MESSAGE;
-	
+
 	message->RemoveName("be:delta_x");
 	message->RemoveName("be:delta_y");
 	backdoor.SyncCursor(message);
@@ -79,7 +79,7 @@ VMWSettingsWatcher::MessageReceived(BMessage* message)
 			settings->Reload();
 			activated = settings->GetBool("mouse_enabled", true);
 		break;
-		
+
 		default:
 			BLooper::MessageReceived(message);
 		break;

@@ -9,16 +9,16 @@ class VMWNode;
 typedef struct vmw_list_item {
 	VMWNode* node;
 	vmw_list_item* next;
-	
+
 } vmw_list_item;
 
 class VMWNode {
 	static ino_t	current_inode;
-	
+
 public:
 					VMWNode(const char* _name, VMWNode* _parent);
 	virtual			~VMWNode();
-	
+
 	void			DeleteChildIfExists(const char* name);
 	VMWNode*		GetChild(const char* name);
 	VMWNode*		GetChild(ino_t inode);
@@ -26,7 +26,7 @@ public:
 	ino_t			GetInode() const { return inode; }
 	const char*		GetName() const { return name; }
 	char*			GetPath(size_t length = 0);
-	
+
 private:
 	char*			name;
 	VMWNode* 		parent;

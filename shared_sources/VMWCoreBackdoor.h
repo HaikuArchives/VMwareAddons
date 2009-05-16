@@ -29,7 +29,7 @@ public:
 				VMWCoreBackdoor();
 	virtual		~VMWCoreBackdoor();
 	bool		InVMware() const;
-	
+
 	status_t	OpenRPCChannel();
 	status_t	SendMessage(const char* message, bool check_status, size_t length = 0);
 	char*		GetMessage(size_t* _length = NULL);
@@ -37,19 +37,19 @@ public:
 
 protected:
 	void		BackdoorCall(regs_t* regs, ulong command, ulong param);
-	
+
 private:
 	void		BackdoorRPCCall(regs_t* regs, ulong command, ulong param);
 	void		BackdoorRPCSend(regs_t* regs, char* data, size_t length);
 	void		BackdoorRPCGet(regs_t* regs, char* data, size_t length);
 
 	bool		in_vmware;
-	
+
 	bool		rpc_opened;
 	ulong		rpc_channel;
 	ulong		rpc_cookie1;
 	ulong		rpc_cookie2;
-	
+
 	sem_id		backdoor_access;
 };
 

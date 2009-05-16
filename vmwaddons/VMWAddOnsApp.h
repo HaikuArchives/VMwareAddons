@@ -15,7 +15,7 @@ public:
 					VMWAddOnsApp();
 	virtual			~VMWAddOnsApp();
 	virtual void	ReadyToRun();
-	
+
 	VMWBackdoor backdoor;
 };
 

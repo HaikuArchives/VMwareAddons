@@ -27,15 +27,15 @@ status_t
 VMWAddOnsSettings::OpenSettings()
 {
 	BPath settings_path;
-	
+
 	find_directory(B_USER_SETTINGS_DIRECTORY, &settings_path);
 	settings_path.Append(SETTINGS_FILE_NAME);
-	
+
 	settings_file.SetTo(settings_path.Path(), B_READ_WRITE | B_CREATE_FILE);
 
 	return settings_file.InitCheck();
 }
-	
+
 void
 VMWAddOnsSettings::Reload()
 {
@@ -51,7 +51,7 @@ VMWAddOnsSettings::GetBool(const char* name, bool default_value)
 	if (settings_msg.FindBool(name, &value) == B_OK) {
 		return value;
 	}
-	
+
 	return default_value;
 }
 
@@ -61,12 +61,12 @@ VMWAddOnsSettings::SetBool(const char* name, bool value)
 	if (settings_msg.ReplaceBool(name, value) == B_NAME_NOT_FOUND) {
 		settings_msg.AddBool(name, value);
 	}
-	
+
 	if (OpenSettings() == B_OK) {
 		settings_msg.Flatten(&settings_file);
 	}
-	
+
 	settings_file.Unset();
 }
-	
-	
+
+

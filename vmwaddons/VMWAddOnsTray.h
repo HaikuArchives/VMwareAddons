@@ -24,7 +24,7 @@ public:
 	virtual void			GetPreferredSize(float *w, float* h);
 	virtual void			Draw(BRect /*update_rect*/);
 	virtual void			MessageReceived(BMessage* message);
-	virtual void 			AttachedToWindow();	
+	virtual void 			AttachedToWindow();
 	virtual void			MouseDown(BPoint where);
 
 	virtual status_t		Archive(BMessage *data, bool deep) const;
@@ -37,16 +37,16 @@ private:
 	void					init();
 	void					RemoveMyself(bool askUser);
 	void					SetClipboardSharing(bool enable);
-	
+
 	BBitmap*				icon_all;
 	BBitmap*				icon_mouse;
 	BBitmap*				icon_clipboard;
 	BBitmap*				icon_none;
 	BBitmap*				icon_disabled;
-	
+
 	BClipboard*				system_clipboard;
 	BMessageRunner*			clipboard_poller;
-	
+
 	VMWBackdoor				backdoor;
 };
 

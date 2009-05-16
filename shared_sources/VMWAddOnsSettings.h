@@ -18,7 +18,7 @@ public:
 				VMWAddOnsSettings();
 				VMWAddOnsSettings(node_ref* ref);
 	virtual		~VMWAddOnsSettings();
-	
+
 	void		Reload();
 	bool		GetBool(const char* name, bool default_value);
 	void		SetBool(const char* name, bool value);

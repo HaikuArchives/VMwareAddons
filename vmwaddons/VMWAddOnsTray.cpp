@@ -28,7 +28,7 @@ extern "C" _EXPORT BView* instantiate_deskbar_item(void)
 }
 
 VMWAddOnsTray::VMWAddOnsTray()
-	: BView(BRect(0, 0, B_MINI_ICON, B_MINI_ICON), 
+	: BView(BRect(0, 0, B_MINI_ICON, B_MINI_ICON),
 		TRAY_NAME, B_FOLLOW_LEFT | B_FOLLOW_TOP, B_WILL_DRAW)
 {
 		init();
@@ -42,26 +42,26 @@ VMWAddOnsTray::VMWAddOnsTray(BMessage* mdArchive)
 
 void
 VMWAddOnsTray::init()
-{	
+{
 	system_clipboard = new BClipboard("system");
 	clipboard_poller = NULL;
 	cleanup_in_process = false;
-	
+
 	icon_all = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_all->SetBits(pic_act_yy, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
-	
+
 	icon_mouse = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_mouse->SetBits(pic_act_ny, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
-	
+
 	icon_clipboard = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_clipboard->SetBits(pic_act_yn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
-	
+
 	icon_none = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_none->SetBits(pic_act_nn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
-	
+
 	icon_disabled = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
 	icon_disabled->SetBits(pic_disabled, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
-	
+
 	SetDrawingMode(B_OP_ALPHA);
 	SetFlags(Flags() | B_WILL_DRAW);
 }
@@ -73,7 +73,7 @@ VMWAddOnsTray::~VMWAddOnsTray()
 	delete icon_clipboard;
 	delete icon_none;
 	delete icon_disabled;
-	
+
 	delete system_clipboard;
 	delete clipboard_poller;
 }
@@ -104,16 +104,16 @@ VMWAddOnsTray::Instantiate(BMessage *data)
 void
 VMWAddOnsTray::Draw(BRect /*update_rect*/) {
 	BRect tray_bounds(Bounds());
-	
+
 	if (Parent()) SetHighColor(Parent()->ViewColor());
 	else SetHighColor(189, 186, 189, 255);
 	FillRect(tray_bounds);
-	
+
 	if (!backdoor.InVMware()) {
 		DrawBitmap(icon_disabled);
 		return;
 	}
-	
+
 	if (settings.GetBool("mouse_enabled", true)) {
 		if (settings.GetBool("clip_enabled", true))
 			DrawBitmap(icon_all);
@@ -146,7 +146,7 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 			this->Invalidate();
 		}
 		break;
-		
+
 		case CLIPBOARD_SHARING:
 		{
 			bool sharing_enabled = settings.GetBool("clip_enabled", true);
@@ -155,23 +155,23 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 			this->Invalidate();
 		}
 		break;
-		
+
 		case REMOVE_FROM_DESKBAR:
 			RemoveMyself(true);
 		break;
-		
+
 		case B_ABOUT_REQUESTED:
 		{
-			BAlert* alert = new BAlert("about", 
+			BAlert* alert = new BAlert("about",
 				APP_NAME ", version " APP_VERSION "\n"
 				"© 2009, Vincent Duvert\n"
 				"Distributed under the terms of the MIT License.", "OK", NULL, NULL,
-                B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
-	        alert->SetShortcut(0, B_ENTER);
-    	    alert->Go(NULL);
+				B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
+			alert->SetShortcut(0, B_ENTER);
+			alert->Go(NULL);
 		}
 		break;
-	
+
 		case B_CLIPBOARD_CHANGED:
 		{
 			char* data;
@@ -180,41 +180,41 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 
 			if (!system_clipboard->Lock())
 				return;
-			
+
 			clip_message = system_clipboard->Data();
 			if (clip_message == NULL) {
 				system_clipboard->Unlock();
 				return;
 			}
-				
+
 			clip_message->FindData("text/plain", B_MIME_TYPE, (const void**)&data, &len);
 			if(data == NULL) {
 				system_clipboard->Unlock();
 				return;
 			}
-			
+
 			// Clear the host clipboard
 			backdoor.SetHostClipboard(data, len);
-			
+
 			system_clipboard->Unlock();
 		}
 		break;
-		
+
 		case CLIPBOARD_POLL:
 		{
 			char* data;
 			size_t len;
-			
+
 			if (backdoor.GetHostClipboard(&data, &len) != B_OK)
 				return;
-		
+
 			BMessage* clip_message = NULL;
 			if (!system_clipboard->Lock()) {
 				free(data);
 				return;
 			}
 			system_clipboard->Clear();
-			
+
 			if (len > 0) {
 				clip_message = system_clipboard->Data();
 				if (clip_message == NULL) {
@@ -222,15 +222,15 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 					system_clipboard->Unlock();
 					return;
 				}
-				
+
 				clip_message->AddData("text/plain", B_MIME_TYPE, data, len);
 				system_clipboard->Commit();
 				system_clipboard->Unlock();
 			}
 		}
-	
+
 		break;
-		
+
 		case SHRINK_DISKS:
 		{
 			thread_id th = spawn_thread(VMWAddOnsCleanup::Start,
@@ -240,7 +240,7 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 				resume_thread(th);
 			}
 		}
-		
+
 		default:
 			BView::MessageReceived(message);
 		break;
@@ -259,7 +259,7 @@ VMWAddOnsTray::SetClipboardSharing(bool enable)
 {
 	if (clipboard_poller != NULL) delete clipboard_poller;
 	clipboard_poller = NULL;
-	
+
 	if (enable) {
 		system_clipboard->StartWatching(this);
 		clipboard_poller = new BMessageRunner(this, new BMessage(CLIPBOARD_POLL), 1000000);
@@ -270,10 +270,10 @@ VMWAddOnsTray::SetClipboardSharing(bool enable)
 
 int32
 removeFromDeskbar(void *)
-{	
+{
 	BDeskbar db;
 	db.RemoveItem(TRAY_NAME);
-		
+
 	return 0;
 }
 
@@ -295,7 +295,7 @@ VMWAddOnsTray::RemoveMyself(bool askUser)
 {
 	// From the BeBook : A BView sitting on the Deskbar cannot remove itself (or another view)
 	// So we start another thread to do the dirty work
-	
+
 	int32 result = 1;
 	if (askUser) {
 		result = (new BAlert(TRAY_NAME,
@@ -303,8 +303,8 @@ VMWAddOnsTray::RemoveMyself(bool askUser)
 		"This will stop clipboard sharing (but not mouse sharing if it is running).",
 		"Cancel", "Quit", NULL, B_WIDTH_AS_USUAL, B_INFO_ALERT))->Go();
 	}
-	
-	if (result != 0) {	
+
+	if (result != 0) {
 		thread_id th = spawn_thread(removeFromDeskbar, "goodbye cruel world", B_NORMAL_PRIORITY, NULL);
 		if (th) resume_thread(th);
 	}
@@ -314,14 +314,14 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware)
 	:BPopUpMenu("tray_menu", false, false)
 {
 	BMenuItem* menu_item;
-	
+
 	SetFont(be_plain_font);
-	
+
 	if (in_vmware) {
 		menu_item = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
 		menu_item->SetMarked(settings.GetBool("mouse_enabled", true));;
 		AddItem(menu_item);
-	
+
 		menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
 		menu_item->SetMarked(settings.GetBool("clip_enabled", true));
 		AddItem(menu_item);
@@ -333,12 +333,12 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware)
 		menu_item->SetEnabled(false);
 		AddItem(menu_item);
 	}
-	
+
 	AddSeparatorItem();
-	
+
 	AddItem(new BMenuItem("About "APP_NAME B_UTF8_ELLIPSIS, new BMessage(B_ABOUT_REQUESTED)));
 	AddItem(new BMenuItem("Quit" B_UTF8_ELLIPSIS, new BMessage(REMOVE_FROM_DESKBAR)));
-		
+
 	SetTargetForItems(tray);
 	SetAsyncAutoDestruct(true);
 }
