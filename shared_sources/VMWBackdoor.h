@@ -6,31 +6,16 @@
 #ifndef VMW_BACK_H
 #define VMW_BACK_H
 
-#include <Message.h>
+#include "VMWCoreBackdoor.h"
 
-class VMWBackdoor {
+class VMWBackdoor : public VMWCoreBackdoor {
 public:
 				VMWBackdoor();
 	virtual		~VMWBackdoor();
-	bool		InVMware() const;
+	
 	status_t	SyncCursor(BMessage* cursor_message);
 	status_t	GetHostClipboard(char** text, size_t *text_length);
 	status_t	SetHostClipboard(char* text, size_t length);
-	
-	status_t	OpenRPCChannel();
-	status_t	SendMessage(const char* message);
-	char*		GetMessage();
-	status_t	CloseRPCChannel();
-	
-private:	
-	bool			in_vmware;
-	
-	bool			rpc_opened;
-	ulong			rpc_channel;
-	ulong			rpc_cookie1;
-	ulong			rpc_cookie2;
-	
-	sem_id			backdoor_access;
 };
 
 #endif

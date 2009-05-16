@@ -30,7 +30,8 @@ TYPE= SHARED
 #	if two source files with the same name (source.c or source.cpp)
 #	are included from different directories.  Also note that spaces
 #	in folder names do not work well with this makefile.
-SRCS= VMWMouseFilter.cpp ../shared_sources/VMWAddOnsSettings.cpp  ../shared_sources/VMWBackdoor.cpp
+SRCS= VMWMouseFilter.cpp ../shared_sources/VMWAddOnsSettings.cpp \
+	../shared_sources/VMWCoreBackdoor.cpp ../shared_sources/VMWBackdoor.cpp
 
 
 #	specify the resource files to use

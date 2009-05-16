@@ -31,7 +31,8 @@ TYPE= APP
 #	are included from different directories.  Also note that spaces
 #	in folder names do not work well with this makefile.
 SRCS= VMWAddOnsApp.cpp VMWAddOnsSelectWindow.cpp VMWAddOnsTray.cpp VMWAddOnsCleanup.cpp \
-	VMWAddOnsStatusWindow.cpp ../shared_sources/VMWAddOnsSettings.cpp  ../shared_sources/VMWBackdoor.cpp
+	VMWAddOnsStatusWindow.cpp ../shared_sources/VMWAddOnsSettings.cpp \
+	../shared_sources/VMWCoreBackdoor.cpp ../shared_sources/VMWBackdoor.cpp
 
 
 #	specify the resource files to use

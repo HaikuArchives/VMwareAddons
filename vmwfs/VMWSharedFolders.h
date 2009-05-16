@@ -8,7 +8,7 @@
 
 #include <SupportDefs.h>
 
-#include "VMWBackdoor.h"
+#include "VMWCoreBackdoor.h"
 
 typedef uint32 file_handle;
 typedef uint32 folder_handle;
