@@ -14,9 +14,10 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 		return B_BAD_VALUE;
 	
 	shared_folders = new VMWSharedFolders();
-	if (shared_folders->InitCheck() != B_OK) {
+	status_t ret = shared_folders->InitCheck();
+	if (ret != B_OK) {
 		delete shared_folders;
-		return B_ERROR;
+		return ret;
 	}
 	
 	root_node = new VMWNode("", NULL);	
@@ -29,10 +30,8 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 	_vol->private_volume = root_node;
 	_vol->ops = &volume_ops;
 	
-	status_t ret = publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
+	return publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
 			&vnode_ops, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR | S_IWGRP | S_IWOTH | S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH, 0);
-
-	return ret;
 }
 
 status_t

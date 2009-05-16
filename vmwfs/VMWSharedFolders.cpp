@@ -44,10 +44,15 @@ enum {
 VMWSharedFolders::VMWSharedFolders()
 {
 	CALLED();
-	if (!backdoor.InVMware() || backdoor.OpenRPCChannel() != B_OK) {
-		init_check = B_ERROR;
+	if (!backdoor.InVMware()) {
+		init_check = B_UNSUPPORTED;
 		return;
 	}
+	
+	init_check = backdoor.OpenRPCChannel();
+	
+	if (init_check != B_OK)
+		return;
 	
 	init_check = backdoor.SendMessage("f ", true);
 }
