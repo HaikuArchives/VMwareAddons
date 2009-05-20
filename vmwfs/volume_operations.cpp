@@ -18,7 +18,7 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 	if (atomic_add(&mount_count, 1))
 		return B_UNSUPPORTED;
 
-	shared_folders = new VMWSharedFolders();
+	shared_folders = new VMWSharedFolders(IO_SIZE);
 	status_t ret = shared_folders->InitCheck();
 	if (ret != B_OK) {
 		atomic_add(&mount_count, -1);
@@ -64,8 +64,8 @@ vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 	CALLED();
 	info->flags = B_FS_IS_PERSISTENT;
 	info->block_size = FAKE_BLOCK_SIZE;
-	info->io_size = 4096;
-	info->total_blocks = 2 * 1024 * 1024 * 1024 * 1024 / info->block_size; // 2GB0
+	info->io_size = IO_SIZE;
+	info->total_blocks = 2 * 1024 * 1024 * 1024 / info->block_size; // 2GB
 	info->free_blocks = info->total_blocks;
 	info->total_nodes = info->block_size;
 	info->free_nodes = info->block_size;

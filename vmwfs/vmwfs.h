@@ -10,6 +10,7 @@
 #include "VMWSharedFolders.h"
 
 #define FAKE_BLOCK_SIZE 512
+#define IO_SIZE 4096
 
 extern VMWSharedFolders* shared_folders;
 
