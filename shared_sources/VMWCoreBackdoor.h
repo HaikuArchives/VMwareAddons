@@ -32,6 +32,7 @@ public:
 
 	status_t	OpenRPCChannel();
 	status_t	SendMessage(const char* message, bool check_status, size_t length = 0);
+	status_t	SendAndGet(char* buffer, size_t* length, size_t buffer_length);
 	char*		GetMessage(size_t* _length = NULL);
 	status_t	CloseRPCChannel();
 

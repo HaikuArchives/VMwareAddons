@@ -263,7 +263,71 @@ VMWCoreBackdoor::SendMessage(const char* message, bool check_status, size_t leng
 	return B_OK;
 }
 
-char* VMWCoreBackdoor::GetMessage(size_t* _length)
+status_t
+VMWCoreBackdoor::SendAndGet(char* buffer, size_t* length, size_t buffer_length)
+{
+	uint reply_id;
+	
+	if (!in_vmware) return B_NOT_ALLOWED;
+	
+	if (acquire_sem(backdoor_access) != B_OK)
+		return B_ERROR;
+
+	regs_t regs;
+	// Send command length
+	BackdoorRPCCall(&regs, VMW_BACK_RPC_SEND_LENGTH, *length);
+
+	if (regs.ecx != VMW_BACK_RPC_SEND_L_OK)
+		goto err;
+
+	if (*length > 0) {
+		// Send command data
+		BackdoorRPCSend(&regs, buffer, *length);
+
+		if (regs.eax != VMW_BACK_RPC_OK)
+			goto err;
+	}
+	
+	// Get data length
+	BackdoorRPCCall(&regs, VMW_BACK_RPC_GET_LENGTH, 0);
+
+	if (regs.ecx != VMW_BACK_RPC_GET_L_OK)
+		goto err;
+	
+	*length = regs.eax;
+	
+	if (*length > buffer_length) {
+		release_sem(backdoor_access);
+		return B_BUFFER_OVERFLOW;
+	}
+	
+	reply_id = HIGH_BITS(regs.edx);
+	
+	// Get data
+	BackdoorRPCGet(&regs, buffer, *length);
+
+	if (regs.eax != VMW_BACK_RPC_OK)
+		goto err;
+	
+	buffer[*length] = '\0';
+	
+	// Confirm...
+	BackdoorRPCCall(&regs, VMW_BACK_RPC_ACK, reply_id);
+
+	if (regs.ecx != VMW_BACK_RPC_OK)
+		goto err;
+	
+	release_sem(backdoor_access);
+	
+	return (*length > 0 && buffer[0] == '1' ? B_OK : B_ERROR);
+
+err:
+	release_sem(backdoor_access);
+	return B_ERROR;
+}
+
+char*
+VMWCoreBackdoor::GetMessage(size_t* _length)
 {
 	if (!in_vmware) return NULL;
 
