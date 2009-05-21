@@ -65,7 +65,7 @@ vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 	info->flags = B_FS_IS_PERSISTENT;
 	info->block_size = FAKE_BLOCK_SIZE;
 	info->io_size = IO_SIZE;
-	info->total_blocks = 2 * 1024 * 1024 * 1024 / info->block_size; // 2GB
+	info->total_blocks = 4 * 1024 * 1024; // 2GB
 	info->free_blocks = info->total_blocks;
 	info->total_nodes = info->block_size;
 	info->free_nodes = info->block_size;

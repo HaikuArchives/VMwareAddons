@@ -6,6 +6,7 @@
 #include "VMWBackdoor.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 // http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
 #define VMW_BACK_GET_CURSOR 		0x04

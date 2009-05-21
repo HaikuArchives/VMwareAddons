@@ -122,12 +122,12 @@ vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 	if (ret != B_OK)
 		return ret;
 
-	if (geteuid() == 0 && (mode & X_OK != X_OK || CAN_EXEC(attributes)))
+	if (geteuid() == 0 && ((mode & X_OK) != X_OK || CAN_EXEC(attributes)))
 		return B_OK;
 
-	if ((mode & R_OK == R_OK && !CAN_READ(attributes))
-		|| (mode & W_OK == W_OK && !CAN_WRITE(attributes))
-			|| (mode & X_OK == X_OK && !CAN_EXEC(attributes)))
+	if (((mode & R_OK) == R_OK && !CAN_READ(attributes))
+		|| ((mode & W_OK) == W_OK && !CAN_WRITE(attributes))
+			|| ((mode & X_OK) == X_OK && !CAN_EXEC(attributes)))
 		return B_PERMISSION_DENIED;
 
 	return B_OK;
@@ -208,9 +208,9 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	vmw_attributes attributes;
 
 	attributes.perms = 0;
-	attributes.perms |= (stat->st_mode & S_IRUSR == S_IRUSR ? MSK_READ : 0);
-	attributes.perms |= (stat->st_mode & S_IWUSR == S_IWUSR ? MSK_WRITE : 0);
-	attributes.perms |= (stat->st_mode & S_IXUSR == S_IXUSR ? MSK_EXEC : 0);
+	attributes.perms |= ((stat->st_mode & S_IRUSR) == S_IRUSR ? MSK_READ : 0);
+	attributes.perms |= ((stat->st_mode & S_IWUSR) == S_IWUSR ? MSK_WRITE : 0);
+	attributes.perms |= ((stat->st_mode & S_IXUSR) == S_IXUSR ? MSK_EXEC : 0);
 
 	attributes.size = stat->st_size;
 
@@ -219,11 +219,11 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	attributes.c_time = (stat->st_ctime + 11644466400LL) * 10000000LL;
 
 	uint32 mask = 0;
-	mask |= (statMask & FS_WRITE_STAT_MODE == FS_WRITE_STAT_MODE ? VMW_SET_PERMS : 0);
-	mask |= (statMask & FS_WRITE_STAT_SIZE == FS_WRITE_STAT_SIZE ? VMW_SET_SIZE : 0);
-	mask |= (statMask & FS_WRITE_STAT_ATIME == FS_WRITE_STAT_ATIME ? VMW_SET_ATIME : 0);
-	mask |= (statMask & FS_WRITE_STAT_MTIME == FS_WRITE_STAT_MTIME ? VMW_SET_UTIME : 0);
-	mask |= (statMask & FS_WRITE_STAT_CRTIME == FS_WRITE_STAT_CRTIME ? VMW_SET_CTIME : 0);
+	mask |= ((statMask & FS_WRITE_STAT_MODE) == FS_WRITE_STAT_MODE ? VMW_SET_PERMS : 0);
+	mask |= ((statMask & FS_WRITE_STAT_SIZE) == FS_WRITE_STAT_SIZE ? VMW_SET_SIZE : 0);
+	mask |= ((statMask & FS_WRITE_STAT_ATIME) == FS_WRITE_STAT_ATIME ? VMW_SET_ATIME : 0);
+	mask |= ((statMask & FS_WRITE_STAT_MTIME) == FS_WRITE_STAT_MTIME ? VMW_SET_UTIME : 0);
+	mask |= ((statMask & FS_WRITE_STAT_CRTIME) == FS_WRITE_STAT_CRTIME ? VMW_SET_CTIME : 0);
 
 	status_t ret = shared_folders->SetAttributes(path, &attributes, mask);
 	free(path);

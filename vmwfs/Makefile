@@ -102,10 +102,10 @@ SYMBOLS = TRUE
 DEBUGGER =
 
 #	specify additional compiler flags for all files
-COMPILER_FLAGS =
+COMPILER_FLAGS = -Werror
 
 #	specify additional linker flags
-LINKER_FLAGS = -lgcc
+LINKER_FLAGS = -lgcc -lstdc++
 
 ## include the makefile-engine
 include /boot/develop/etc/makefile-engine
