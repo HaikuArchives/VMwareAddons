@@ -101,7 +101,16 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	if (pos < 0)
 		return B_BAD_VALUE;
 
-	status_t ret = shared_folders->WriteFile(*(file_handle*)cookie, pos, buffer, length);
-
+	size_t written = 0;
+	status_t ret = B_OK;
+	
+	while (written < *length && ret == B_OK) {
+		size_t to_write = ((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
+		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos, buffer, &to_write);
+		written += to_write;
+	}
+	
+	*length = written;
+	
 	return ret;
 }

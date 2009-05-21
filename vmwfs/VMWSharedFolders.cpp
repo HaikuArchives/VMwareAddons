@@ -180,8 +180,8 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 
 	// /!\ should be changed in the constructor, too
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32 + *write_length;
-
-	ASSERT(*write_length + length <= rpc_buffer_size);
+	
+	ASSERT(length <= rpc_buffer_size);
 
 	off_t pos = BuildCommand(VMW_CMD_WRITE_FILE, handle);
 	SET_8(pos, 0);
