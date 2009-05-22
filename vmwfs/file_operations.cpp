@@ -48,14 +48,13 @@ vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 	if (cookie == NULL)
 		return B_NO_MEMORY;
 
-	char* path = node->GetPath();
+	const char* path = node->GetPath();
 	if (path == NULL) {
 		free(cookie);
 		return B_NO_MEMORY;
 	}
 
 	status_t ret = shared_folders->OpenFile(path, openMode, cookie);
-	free(path);
 
 	if (ret != B_OK) {
 		free(cookie);

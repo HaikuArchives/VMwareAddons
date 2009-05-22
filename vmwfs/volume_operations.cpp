@@ -99,14 +99,13 @@ vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32
 
 	vnode->private_node = node;
 
-	char* path = node->GetPath();
+	const char* path = node->GetPath();
 	if (path == NULL)
 		return B_NO_MEMORY;
 
 	vmw_attributes attributes;
 	bool is_dir;
 	status_t ret = shared_folders->GetAttributes(path, &attributes, &is_dir);
-	free(path);
 	if (ret != B_OK)
 		return ret;
 

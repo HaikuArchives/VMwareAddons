@@ -5,6 +5,8 @@
 #include <KernelExport.h>
 
 ino_t VMWNode::current_inode = 2;
+VMWNode* VMWNode::nodes_with_cached_paths[CACHE_SIZE];
+uint32 VMWNode::cache_current = 0;
 
 VMWNode::VMWNode(const char* _name, VMWNode* _parent)
 	: parent(_parent)
@@ -13,6 +15,8 @@ VMWNode::VMWNode(const char* _name, VMWNode* _parent)
 	inode = current_inode;
 	current_inode++;
 	children = NULL;
+	cached_path = NULL;
+	cached_path_position = -1;
 }
 
 VMWNode::~VMWNode()
@@ -26,6 +30,11 @@ VMWNode::~VMWNode()
 		item = next_item;
 	}
 	free(name);
+
+	if (cached_path_position >= 0) {
+		free(cached_path);
+		nodes_with_cached_paths[cached_path_position] = NULL;
+	}
 }
 
 void
@@ -116,34 +125,77 @@ char*
 VMWNode::GetChildPath(const char* name)
 {
 	if (strcmp(name, "") == 0 || strcmp(name, ".") == 0)
-		return this->GetPath();
+		return strdup(GetPath());
 
 	if (strcmp(name, "..") == 0)
-		return (parent == NULL ? this->GetPath() : parent->GetPath());
-
-	char* child_path = GetPath(strlen(name) + 1);
-	if (child_path == NULL)
+		return (parent == NULL ? strdup("") : strdup(parent->GetPath()));
+	
+	if (parent == NULL)
+		return strdup(name);
+	
+	size_t length;
+	const char* parent_path = GetPath(&length);
+	if (parent_path == NULL)
 		return NULL;
-
-	if (child_path[0] != '\0')
-		strcat(child_path, "/");
+	
+	char* child_path = (char*)malloc(length + strlen(name) + 1);
+	
+	strcpy(child_path, parent_path);
+	strcat(child_path, "/");
 	strcat(child_path, name);
-
+	
 	return child_path;
 }
 
+const char*
+VMWNode::GetPath(size_t* path_length)
+{	
+	if (cached_path_position < 0) {
+		cached_path_length = 0;
+		cached_path = _GetPath(&cached_path_length);		
+		if (cached_path == NULL)
+			return NULL;
+	
+		if (nodes_with_cached_paths[cache_current] != NULL) {
+			free(nodes_with_cached_paths[cache_current]->cached_path);
+			nodes_with_cached_paths[cache_current]->cached_path = NULL;
+		}
+		
+		nodes_with_cached_paths[cache_current] = this;
+		
+		cached_path_position = cache_current;
+		
+		cache_current++;
+		
+		if (cache_current >= CACHE_SIZE)
+			cache_current = 0;
+	}
+	
+	if (path_length != NULL)
+		*path_length = cached_path_length;
+	return cached_path;
+}
+
 char*
-VMWNode::GetPath(size_t length)
+VMWNode::_GetPath(size_t* length)
 {
 	char* path;
 
 	if (parent == NULL) {
-		path = (char*)malloc(length == 0 ? 1 : length);
-		path[0] = path[length] = '\0';
+		if (*length == 0)
+			*length = 1;
+		path = (char*)malloc(*length);
+		if (path == NULL)
+			return NULL;
+		path[0] = path[*length] = '\0';
 		return path;
 	}
 
-	path = parent->GetPath(length + strlen(name) + 1);
+	*length += strlen(name) + 1;
+	path = parent->_GetPath(length);
+
+	if (path == NULL)
+			return NULL;
 
 	if (path[0] != '\0')
 		strcat(path, "/");

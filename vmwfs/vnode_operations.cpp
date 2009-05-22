@@ -111,13 +111,12 @@ vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
-	char* path = node->GetPath();
+	const char* path = node->GetPath();
 	if (path == NULL)
 		return B_NO_MEMORY;
 
 	vmw_attributes attributes;
 	status_t ret = shared_folders->GetAttributes(path, &attributes);
-	free(path);
 
 	if (ret != B_OK)
 		return ret;
@@ -140,14 +139,13 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	VMWNode* root = (VMWNode*)volume->private_volume;
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
-	char* path = node->GetPath();
+	const char* path = node->GetPath();
 	if (path == NULL)
 		return B_NO_MEMORY;
 
 	vmw_attributes attributes;
 	bool is_dir;
 	status_t ret = shared_folders->GetAttributes(path, &attributes, &is_dir);
-	free(path);
 
 	if (ret != B_OK)
 		return ret;
@@ -201,7 +199,7 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
-	char* path = node->GetPath();
+	const char* path = node->GetPath();
 	if (path == NULL)
 		return B_NO_MEMORY;
 
@@ -226,7 +224,6 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	mask |= ((statMask & FS_WRITE_STAT_CRTIME) == FS_WRITE_STAT_CRTIME ? VMW_SET_CTIME : 0);
 
 	status_t ret = shared_folders->SetAttributes(path, &attributes, mask);
-	free(path);
 
 	return ret;
 }
