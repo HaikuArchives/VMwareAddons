@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <KernelExport.h>
 
-ino_t VMWNode::current_inode = 2;
+ino_t VMWNode::current_inode = 1;
 VMWNode* VMWNode::nodes_with_cached_paths[CACHE_SIZE];
 uint32 VMWNode::cache_current = 0;
 

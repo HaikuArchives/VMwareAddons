@@ -67,8 +67,8 @@ vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 	info->io_size = IO_SIZE;
 	info->total_blocks = 4 * 1024 * 1024; // 2GB
 	info->free_blocks = info->total_blocks;
-	info->total_nodes = info->block_size;
-	info->free_nodes = info->block_size;
+	info->total_nodes = 0;
+	info->free_nodes = 0;
 
 	strcpy(info->device_name, "");
 	strcpy(info->volume_name, "VMW Shared Folders");

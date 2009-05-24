@@ -31,7 +31,7 @@ TYPE= DRIVER
 #	are included from different directories. Also note that spaces
 #	in folder names do not work well with this makefile.
 SRCS= dir_operations.cpp file_operations.cpp kernel_interface.cpp \
-	partitions_detect ../shared_sources/VMWCoreBackdoor.cpp VMWNode.cpp \
+	../shared_sources/VMWCoreBackdoor.cpp VMWNode.cpp \
 	VMWSharedFolders.cpp vnode_operations.cpp volume_operations.cpp
 
 
