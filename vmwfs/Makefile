@@ -105,7 +105,7 @@ DEBUGGER =
 COMPILER_FLAGS = -Werror
 
 #	specify additional linker flags
-LINKER_FLAGS = -lgcc -lstdc++.r4
+LINKER_FLAGS = -lgcc
 
 ## include the makefile-engine
 include /boot/develop/etc/makefile-engine

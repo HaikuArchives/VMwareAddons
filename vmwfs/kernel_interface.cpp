@@ -146,10 +146,10 @@ static file_system_module_info vmw_file_system = {
 	B_DISK_SYSTEM_SUPPORTS_WRITING,	// DDM flags
 
 	// scanning
-	NULL,						//vmwfs_identify_partition,
-	NULL,						//vmwfs_scan_partition,
-	NULL,						//vmwfs_free_identify_partition_cookie,
-	NULL,						// free_partition_content_cookie
+	NULL,						//vmwfs_identify_partition
+	NULL,						//vmwfs_scan_partition
+	NULL,						//vmwfs_free_identify_partition_cookie
+	NULL,						//free_partition_content_cookie
 
 	&vmwfs_mount,
 };

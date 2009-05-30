@@ -8,6 +8,10 @@ VMWNode* root_node;
 
 vint32 mount_count = 0;
 
+char* path_buffer;
+char* path_buffer_dest;
+dev_t device_id;
+
 status_t
 vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args, ino_t *_rootID)
 {
@@ -19,26 +23,31 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 		return B_UNSUPPORTED;
 
 	shared_folders = new VMWSharedFolders(IO_SIZE);
-	status_t ret = shared_folders->InitCheck();
-	if (ret != B_OK) {
+	if (shared_folders == NULL || shared_folders->InitCheck() != B_OK) {
 		atomic_add(&mount_count, -1);
 		delete shared_folders;
-		return ret;
+		return (shared_folders == NULL ? B_NO_MEMORY : shared_folders->InitCheck());
 	}
 
 	root_node = new VMWNode("", NULL);
+	path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	path_buffer_dest = (char*)malloc(B_PATH_NAME_LENGTH);
 
-	if (root_node == NULL) {
+	if (root_node == NULL || path_buffer == NULL || path_buffer_dest == NULL) {
+		delete root_node;
+		free(path_buffer);
+		free(path_buffer_dest);
 		atomic_add(&mount_count, -1);
 		return B_NO_MEMORY;
 	}
-
+	
 	*_rootID = root_node->GetInode();
 
 	_vol->private_volume = root_node;
 	_vol->ops = &volume_ops;
-
-	ret = publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
+	device_id = _vol->id;
+	
+	status_t ret = publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
 			&vnode_ops, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR | S_IWGRP | S_IWOTH | S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH, 0);
 	if (ret != B_OK)
 		atomic_add(&mount_count, -1);
@@ -52,7 +61,9 @@ vmwfs_unmount(fs_volume* volume)
 	CALLED();
 	delete root_node;
 	delete shared_folders;
-
+	free(path_buffer);
+	free(path_buffer_dest);
+	
 	atomic_add(&mount_count, -1);
 
 	return B_OK;
@@ -94,20 +105,24 @@ vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32
 
 	VMWNode* node = root_node->GetChild(id);
 
-	if (node == NULL)
+	if (node == NULL) {
+		dprintf("get_vnode : unable to find inode %lld\n", id);
 		return B_ENTRY_NOT_FOUND;
-
+	}
+	
 	vnode->private_node = node;
 
-	const char* path = node->GetPath();
-	if (path == NULL)
-		return B_NO_MEMORY;
+	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	if (length < 0)
+		return B_BUFFER_OVERFLOW;
 
 	vmw_attributes attributes;
 	bool is_dir;
-	status_t ret = shared_folders->GetAttributes(path, &attributes, &is_dir);
-	if (ret != B_OK)
+	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes, &is_dir);
+	if (ret != B_OK) {
+		dprintf("get_vnode : Error getting informations on %lld, path %s : %s\n", id, path_buffer, strerror(ret));
 		return ret;
+	}
 
 	*_type = 0;
 	*_type |= (CAN_READ(attributes) ? S_IRUSR | S_IRGRP | S_IROTH : 0);

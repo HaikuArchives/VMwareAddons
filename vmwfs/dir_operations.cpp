@@ -14,12 +14,11 @@ vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perm
 	CALLED();
 	VMWNode* node = (VMWNode*)parent->private_node;
 
-	char* path = node->GetChildPath(name);
-	if (path == NULL)
-		return B_NO_MEMORY;
+	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
+	if (length < 0)
+		return B_BUFFER_OVERFLOW;
 
-	status_t ret = shared_folders->CreateDir(path, perms);
-	free(path);
+	status_t ret = shared_folders->CreateDir(path_buffer, perms);
 
 	return ret;
 }
@@ -30,12 +29,11 @@ vmwfs_remove_dir(fs_volume* volume, fs_vnode* parent, const char* name)
 	CALLED();
 	VMWNode* node = (VMWNode*)parent->private_node;
 
-	char* path = node->GetChildPath(name);
-	if (path == NULL)
-		return B_NO_MEMORY;
+	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
+	if (length < 0)
+		return B_BUFFER_OVERFLOW;
 
-	status_t ret = shared_folders->DeleteDir(path);
-	free(path);
+	status_t ret = shared_folders->DeleteDir(path_buffer);
 
 	if (ret != B_OK)
 		return ret;
@@ -57,15 +55,16 @@ vmwfs_open_dir(fs_volume* volume, fs_vnode* vnode, void** _cookie)
 
 	cookie->index = 0;
 
-	const char* path = node->GetPath();
-	if (path == NULL) {
+	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	if (length < 0) {
 		free(cookie);
-		return B_NO_MEMORY;
+		return B_BUFFER_OVERFLOW;
 	}
 
-	status_t ret = shared_folders->OpenDir(path, &cookie->handle);
+	status_t ret = shared_folders->OpenDir(path_buffer, &cookie->handle);
 
 	if (ret != B_OK) {
+		dprintf("OpenDir failed : %s (%ld)\n", strerror(ret), ret);
 		free(cookie);
 		return ret;
 	}
@@ -105,8 +104,10 @@ vmwfs_read_dir(fs_volume* volume, fs_vnode* vnode, void* _cookie, struct dirent*
 		return B_OK;
 	}
 
-	if (ret != B_OK)
+	if (ret != B_OK) {
+		dprintf("ReadDir failed : %s (%ld)\n", strerror(ret), ret);
 		return ret;
+	}
 
 	VMWNode* child_node = node->GetChild(buffer->d_name);
 	if (child_node == NULL)

@@ -61,7 +61,7 @@ public:
 
 private:
 	status_t		Delete(const char* path, bool is_dir);
-	off_t			BuildCommand(uint32 command, uint32 param);
+	off_t			StartCommand();
 	status_t		ConvertStatus(int vmw_status);
 	void			CopyPath(const char* path, off_t* pos);
 

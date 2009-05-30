@@ -7,19 +7,16 @@ vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, i
 {
 	CALLED();
 	VMWNode* dir_node = (VMWNode*)dir->private_node;
-
+	
+	ssize_t length = dir_node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
+	if (length < 0)
+		return B_BUFFER_OVERFLOW;
+	
 	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
 	if (cookie == NULL)
 		return B_NO_MEMORY;
 
-	char* path = dir_node->GetChildPath(name);
-	if (path == NULL) {
-		free(cookie);
-		return B_NO_MEMORY;
-	}
-
-	status_t ret = shared_folders->OpenFile(path, openMode | O_CREAT, cookie);
-	free(path);
+	status_t ret = shared_folders->OpenFile(path_buffer, openMode | O_CREAT, cookie);
 
 	if (ret != B_OK) {
 		free(cookie);
@@ -43,18 +40,16 @@ vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 {
 	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
-
+	
+	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	if (length < 0)
+		return B_BUFFER_OVERFLOW;
+	
 	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
 	if (cookie == NULL)
 		return B_NO_MEMORY;
 
-	const char* path = node->GetPath();
-	if (path == NULL) {
-		free(cookie);
-		return B_NO_MEMORY;
-	}
-
-	status_t ret = shared_folders->OpenFile(path, openMode, cookie);
+	status_t ret = shared_folders->OpenFile(path_buffer, openMode, cookie);
 
 	if (ret != B_OK) {
 		free(cookie);
@@ -88,7 +83,16 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 	if (pos < 0)
 		return B_BAD_VALUE;
 
-	status_t ret = shared_folders->ReadFile(*(file_handle*)cookie, pos, buffer, length);
+	status_t ret;
+	size_t to_read, red = 0;
+	
+	do {
+		to_read = ((*length - red) < IO_SIZE ? *length - red : IO_SIZE);
+		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + red, (uint8*)buffer + red, &to_read);
+		red += to_read;
+	} while(to_read != 0 && red < *length && ret == B_OK); // to_read == 0 means EOF
+	
+	*length = red;
 
 	return ret;
 }
@@ -105,7 +109,7 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	
 	while (written < *length && ret == B_OK) {
 		size_t to_write = ((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
-		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos, buffer, &to_write);
+		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)buffer + written, &to_write);
 		written += to_write;
 	}
 	

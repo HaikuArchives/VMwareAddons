@@ -4,19 +4,16 @@
 #include <stdlib.h>
 #include <KernelExport.h>
 
-ino_t VMWNode::current_inode = 1;
-VMWNode* VMWNode::nodes_with_cached_paths[CACHE_SIZE];
-uint32 VMWNode::cache_current = 0;
+ino_t VMWNode::current_inode = 2;
 
 VMWNode::VMWNode(const char* _name, VMWNode* _parent)
 	: parent(_parent)
 {
 	name = strdup(_name);
+	name_length = strlen(name);
 	inode = current_inode;
 	current_inode++;
 	children = NULL;
-	cached_path = NULL;
-	cached_path_position = -1;
 }
 
 VMWNode::~VMWNode()
@@ -30,12 +27,63 @@ VMWNode::~VMWNode()
 		item = next_item;
 	}
 	free(name);
-
-	if (cached_path_position >= 0) {
-		free(cached_path);
-		nodes_with_cached_paths[cached_path_position] = NULL;
-	}
 }
+
+ssize_t
+VMWNode::CopyPathTo(char* buffer, size_t buffer_length, const char* to_append)
+{	
+	if (parent == NULL) { // This is the root node
+		if (to_append == NULL || to_append[0] == '\0'
+			|| strcmp(to_append, ".") == 0 || strcmp(to_append, "..") == 0) {
+			memset(buffer, 0, buffer_length);
+			return 0;
+		}
+		
+		size_t length = strlen(to_append);
+		
+		if (length >= buffer_length)
+			return -1;
+		
+		strcpy(buffer, to_append);
+		return length;
+	}
+	
+	if (to_append != NULL) {
+		if (strcmp(to_append, "..") == 0)
+			return parent->CopyPathTo(buffer, buffer_length);
+	
+		if (strcmp(to_append, ".") == 0)
+			to_append = NULL;	
+	}
+	
+	ssize_t previous_length = parent->CopyPathTo(buffer, buffer_length);
+	
+	if (previous_length < 0)
+		return -1;
+	
+	bool append_slash = (previous_length > 0);
+	
+	size_t new_length = previous_length + (append_slash ? 1 : 0) + name_length;
+	
+	if (to_append != NULL)
+		new_length += strlen(to_append) + 1;
+	
+	if (new_length >= buffer_length) // No space left
+		return -1;
+	
+	if (append_slash) // Need to add a slash after the previous item
+		strcat(buffer, "/");
+	
+	strcat(buffer, name);
+	
+	if (to_append != NULL) {
+		strcat(buffer, "/");
+		strcat(buffer, to_append);
+	}
+	
+	return new_length;
+}
+
 
 void
 VMWNode::DeleteChildIfExists(const char* name)
@@ -121,86 +169,3 @@ VMWNode::GetChild(ino_t _inode)
 	return NULL;
 }
 
-char*
-VMWNode::GetChildPath(const char* name)
-{
-	if (strcmp(name, "") == 0 || strcmp(name, ".") == 0)
-		return strdup(GetPath());
-
-	if (strcmp(name, "..") == 0)
-		return (parent == NULL ? strdup("") : strdup(parent->GetPath()));
-	
-	if (parent == NULL)
-		return strdup(name);
-	
-	size_t length;
-	const char* parent_path = GetPath(&length);
-	if (parent_path == NULL)
-		return NULL;
-	
-	char* child_path = (char*)malloc(length + strlen(name) + 1);
-	
-	strcpy(child_path, parent_path);
-	strcat(child_path, "/");
-	strcat(child_path, name);
-	
-	return child_path;
-}
-
-const char*
-VMWNode::GetPath(size_t* path_length)
-{	
-	if (cached_path_position < 0) {
-		cached_path_length = 0;
-		cached_path = _GetPath(&cached_path_length);		
-		if (cached_path == NULL)
-			return NULL;
-	
-		if (nodes_with_cached_paths[cache_current] != NULL) {
-			free(nodes_with_cached_paths[cache_current]->cached_path);
-			nodes_with_cached_paths[cache_current]->cached_path = NULL;
-		}
-		
-		nodes_with_cached_paths[cache_current] = this;
-		
-		cached_path_position = cache_current;
-		
-		cache_current++;
-		
-		if (cache_current >= CACHE_SIZE)
-			cache_current = 0;
-	}
-	
-	if (path_length != NULL)
-		*path_length = cached_path_length;
-	return cached_path;
-}
-
-char*
-VMWNode::_GetPath(size_t* length)
-{
-	char* path;
-
-	if (parent == NULL) {
-		if (*length == 0)
-			*length = 1;
-		path = (char*)malloc(*length);
-		if (path == NULL)
-			return NULL;
-		path[0] = path[*length] = '\0';
-		return path;
-	}
-
-	*length += strlen(name) + 1;
-	path = parent->_GetPath(length);
-
-	if (path == NULL)
-			return NULL;
-
-	if (path[0] != '\0')
-		strcat(path, "/");
-
-	strcat(path, name);
-
-	return path;
-}

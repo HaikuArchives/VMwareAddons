@@ -79,9 +79,9 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 {
 	CALLED();
 	// Command string :
-	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Access mode : 0 => RO, 1 => WO, 2 => RW (32-bits, in BuildCommand)
+	// 0) Magic value (6 bytes)
+	// 1) Command number (32-bits)
+	// 2) Access mode : 0 => RO, 1 => WO, 2 => RW (32-bits)
 	// 3) Open mode (32-bits)
 	// 4) Permissions : 1 => exec, 2 => write, 4 => read (8-bits)
 	// 5) The path length, with ending null (32-bits)
@@ -90,7 +90,9 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
 
-	off_t pos = BuildCommand(VMW_CMD_OPEN_FILE, open_mode & 3);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_OPEN_FILE);
+	SET_32(pos, open_mode & 3);
 
 	uint32 vmw_openmode;
 	if (open_mode & O_TRUNC == O_TRUNC) {
@@ -131,8 +133,8 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Handle (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Handle (32-bits)
 	// 3) Offset (64-bits)
 	// 4) Length (32-bits)
 
@@ -140,7 +142,9 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 
 	ASSERT(*read_length + length <= rpc_buffer_size);
 
-	off_t pos = BuildCommand(VMW_CMD_READ_FILE, handle);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_READ_FILE);
+	SET_32(pos, handle);
 	SET_64(pos, offset);
 	SET_32(pos, *read_length);
 
@@ -172,8 +176,8 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Handle (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Handle (32-bits)
 	// 3) ???? (8-bits)
 	// 4) Offset (64-bits)
 	// 5) Length (32-bits)
@@ -183,7 +187,9 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	
 	ASSERT(length <= rpc_buffer_size);
 
-	off_t pos = BuildCommand(VMW_CMD_WRITE_FILE, handle);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_WRITE_FILE);
+	SET_32(pos, handle);
 	SET_8(pos, 0);
 	SET_64(pos, offset);
 	SET_32(pos, *write_length);
@@ -212,12 +218,14 @@ VMWSharedFolders::CloseFile(file_handle handle)
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Handle (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Handle (32-bits)
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32;
 
-	size_t pos = BuildCommand(VMW_CMD_CLOSE_FILE, handle);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_CLOSE_FILE);
+	SET_32(pos, handle);
 
 	ASSERT(pos == length);
 
@@ -232,14 +240,16 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Path length (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 
-	off_t pos = BuildCommand(VMW_CMD_OPEN_DIR, path_length);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_OPEN_DIR);
+	SET_32(pos, path_length);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
@@ -264,13 +274,15 @@ VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Handle (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Handle (32-bits)
 	// 3) Max name length (32-bits)
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32;
 
-	off_t pos = BuildCommand(VMW_CMD_READ_DIR, handle);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_READ_DIR);
+	SET_32(pos, handle);
 	SET_32(pos, index);
 
 	ASSERT(pos == length);
@@ -302,12 +314,14 @@ VMWSharedFolders::CloseDir(folder_handle handle)
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Handle (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Handle (32-bits)
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32;
 
-	size_t pos = BuildCommand(VMW_CMD_CLOSE_DIR, handle);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_CLOSE_DIR);
+	SET_32(pos, handle);
 
 	ASSERT(pos == length);
 
@@ -320,14 +334,16 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Path length (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 
-	off_t pos = BuildCommand(VMW_CMD_GET_ATTR, path_length);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_GET_ATTR);
+	SET_32(pos, path_length);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
@@ -363,8 +379,8 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Attribute mask (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Attribute mask (32-bits)
 	// 3) ???? (8-bits)
 	// 4) attributes
 	// 5) Path length (32-bits)
@@ -373,7 +389,9 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + sizeof(vmw_attributes) + SIZE_32 + path_length + 1;
 
-	off_t pos = BuildCommand(VMW_CMD_SET_ATTR, mask);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_SET_ATTR);
+	SET_32(pos, mask);
 	SET_8(pos, 0);
 	memcpy(rpc_buffer + pos, attributes, sizeof(vmw_attributes));
 	pos += sizeof(vmw_attributes);
@@ -401,15 +419,17 @@ VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) mode (8-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) mode (8-bits)
 	// 3) Path length (32-bits)
 	// 4) The path itself (with / path delimiters replaced by null characters)
 
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
 
-	off_t pos = BuildCommand(VMW_CMD_NEW_DIR, 0);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_NEW_DIR);
+	SET_32(pos, 0);
 	pos -= SIZE_32;
 	SET_8(pos, mode);
 	SET_32(pos, path_length);
@@ -436,14 +456,16 @@ VMWSharedFolders::Delete(const char* path, bool is_dir)
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
-	// 2) Path length (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
+	// 2) Path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 
-	off_t pos = BuildCommand((is_dir ? VMW_CMD_DEL_DIR : VMW_CMD_DEL_FILE), path_length);
+	off_t pos = StartCommand();
+	SET_32(pos, (is_dir ? VMW_CMD_DEL_DIR : VMW_CMD_DEL_FILE));
+	SET_32(pos, path_length);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
@@ -481,7 +503,7 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 	CALLED();
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
-	// 1) Command number (32-bits, in BuildCommand)
+	// 1) Command number (32-bits)
 	// 2) Original path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 	// 4) Destination path length (32-bits)
@@ -493,7 +515,9 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_orig_length + 1 \
 		+ SIZE_32 + path_dest_length + 1;
 
-	off_t pos = BuildCommand(VMW_CMD_MOVE_FILE, path_orig_length);
+	off_t pos = StartCommand();
+	SET_32(pos, VMW_CMD_MOVE_FILE);
+	SET_32(pos, path_orig_length);
 	CopyPath(path_orig, &pos);
 	SET_32(pos, path_dest_length);
 	CopyPath(path_dest, &pos);
@@ -513,19 +537,14 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 }
 
 off_t
-VMWSharedFolders::BuildCommand(uint32 command, uint32 param)
+VMWSharedFolders::StartCommand()
 {
 	CALLED();
 	const char start_bytes[] = { 'f', ' ', '\0', '\0', '\0', '\0' };
 
 	memcpy(rpc_buffer, start_bytes, sizeof(start_bytes));
 
-	off_t pos = sizeof(start_bytes);
-
-	SET_32(pos, command);
-	SET_32(pos, param);
-
-	return pos;
+	return sizeof(start_bytes);
 }
 
 status_t
