@@ -8,7 +8,6 @@
 status_t
 vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 {
-	CALLED();
 	VMWNode* dir_node = (VMWNode*)dir->private_node;
 
 	ssize_t length = dir_node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
@@ -16,7 +15,7 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 		return B_BUFFER_OVERFLOW;
 
 	status_t ret = shared_folders->GetAttributes(path_buffer);
-	dprintf("GetAttributes : lookup %s in %s (path %s) : %s (%ld)\n", 
+	dprintf("GetAttributes : lookup %s in %s (path %s) : %s (%ld)\n",
 		name, dir_node->GetName(), path_buffer, strerror(ret), ret);
 	if (ret != B_OK)
 		return ret;
@@ -33,7 +32,6 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 status_t
 vmwfs_get_vnode_name(fs_volume* volume, fs_vnode* vnode, char* buffer, size_t bufferSize)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
 	strncpy(buffer, node->GetName(), bufferSize);
@@ -44,14 +42,12 @@ vmwfs_get_vnode_name(fs_volume* volume, fs_vnode* vnode, char* buffer, size_t bu
 status_t
 vmwfs_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 {
-	CALLED();
 	return B_OK;
 }
 
 status_t
 vmwfs_remove_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	VMWNode* parent = node->GetChild("..");
 
@@ -70,7 +66,6 @@ vmwfs_remove_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 status_t
 vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)dir->private_node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
@@ -85,15 +80,14 @@ vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 status_t
 vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnode* toDir, const char* toName)
 {
-	CALLED();
 	VMWNode* src_dir = (VMWNode*)fromDir->private_node;
 	VMWNode* dst_dir = (VMWNode*)toDir->private_node;
 
 	ssize_t length = src_dir->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, fromName);
 	if (length < 0)
 		return B_BUFFER_OVERFLOW;
-	
-	
+
+
 	length = dst_dir->CopyPathTo(path_buffer_dest, B_PATH_NAME_LENGTH, toName);
 	dprintf("%s : CopyPathTo set the buffer to %s, length %ld\n", __FUNCTION__, path_buffer_dest, length);
 	if (length < 0)
@@ -107,7 +101,6 @@ vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnod
 status_t
 vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
@@ -136,7 +129,6 @@ vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 status_t
 vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
@@ -197,7 +189,6 @@ enum write_stat_mask {
 status_t
 vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, uint32 statMask)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);

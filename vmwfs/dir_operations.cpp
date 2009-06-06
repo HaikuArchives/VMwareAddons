@@ -11,7 +11,6 @@ typedef struct {
 status_t
 vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perms)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)parent->private_node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
@@ -26,7 +25,6 @@ vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perm
 status_t
 vmwfs_remove_dir(fs_volume* volume, fs_vnode* parent, const char* name)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)parent->private_node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
@@ -46,7 +44,6 @@ vmwfs_remove_dir(fs_volume* volume, fs_vnode* parent, const char* name)
 status_t
 vmwfs_open_dir(fs_volume* volume, fs_vnode* vnode, void** _cookie)
 {
-	CALLED();
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
 	dir_cookie* cookie = (dir_cookie*)malloc(sizeof(dir_cookie));
@@ -77,14 +74,12 @@ vmwfs_open_dir(fs_volume* volume, fs_vnode* vnode, void** _cookie)
 status_t
 vmwfs_close_dir(fs_volume* volume, fs_vnode* vnode, void* cookie)
 {
-	CALLED();
 	return shared_folders->CloseDir(((dir_cookie*)cookie)->handle);
 }
 
 status_t
 vmwfs_free_dir_cookie(fs_volume* volume, fs_vnode* vnode, void* cookie)
 {
-	CALLED();
 	free(cookie);
 	return B_OK;
 }
@@ -92,7 +87,6 @@ vmwfs_free_dir_cookie(fs_volume* volume, fs_vnode* vnode, void* cookie)
 status_t
 vmwfs_read_dir(fs_volume* volume, fs_vnode* vnode, void* _cookie, struct dirent* buffer, size_t bufferSize, uint32* _num)
 {
-	CALLED();
 	VMWNode* root = (VMWNode*)volume->private_volume;
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	dir_cookie* cookie = (dir_cookie*)_cookie;
@@ -127,7 +121,6 @@ vmwfs_read_dir(fs_volume* volume, fs_vnode* vnode, void* _cookie, struct dirent*
 status_t
 vmwfs_rewind_dir(fs_volume* volume, fs_vnode* vnode, void* cookie)
 {
-	CALLED();
 	((dir_cookie*)cookie)->index = 0;
 	return B_OK;
 }

@@ -142,7 +142,7 @@ static file_system_module_info vmw_file_system = {
 	},
 
 	"vmwfs",						// short_name
-	"VMware Shared Folders",		// pretty_name
+	"VMware ShF",					// pretty_name
 	B_DISK_SYSTEM_SUPPORTS_WRITING,	// DDM flags
 
 	// scanning

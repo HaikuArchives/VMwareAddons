@@ -21,7 +21,4 @@ extern char* path_buffer;
 extern char* path_buffer_dest;
 extern dev_t device_id;
 
-#define CALLED() dprintf("vmwfs: %s was called.\n", __FUNCTION__)
-//#define CALLED()
-
 #endif

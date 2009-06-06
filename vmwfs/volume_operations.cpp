@@ -15,7 +15,6 @@ dev_t device_id;
 status_t
 vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args, ino_t *_rootID)
 {
-	CALLED();
 	if (device != NULL)
 		return B_BAD_VALUE;
 
@@ -40,13 +39,13 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 		atomic_add(&mount_count, -1);
 		return B_NO_MEMORY;
 	}
-	
+
 	*_rootID = root_node->GetInode();
 
 	_vol->private_volume = root_node;
 	_vol->ops = &volume_ops;
 	device_id = _vol->id;
-	
+
 	status_t ret = publish_vnode(_vol, *_rootID, (void*)_vol->private_volume,
 			&vnode_ops, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR | S_IWGRP | S_IWOTH | S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH, 0);
 	if (ret != B_OK)
@@ -58,12 +57,11 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 status_t
 vmwfs_unmount(fs_volume* volume)
 {
-	CALLED();
 	delete root_node;
 	delete shared_folders;
 	free(path_buffer);
 	free(path_buffer_dest);
-	
+
 	atomic_add(&mount_count, -1);
 
 	return B_OK;
@@ -72,7 +70,6 @@ vmwfs_unmount(fs_volume* volume)
 status_t
 vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 {
-	CALLED();
 	info->flags = B_FS_IS_PERSISTENT;
 	info->block_size = FAKE_BLOCK_SIZE;
 	info->io_size = IO_SIZE;
@@ -90,7 +87,6 @@ vmwfs_read_fs_info(fs_volume* volume, struct fs_info* info)
 status_t
 vmwfs_write_fs_info(fs_volume* volume, const struct fs_info* info, uint32 mask)
 {
-	CALLED();
 	// TODO : Store volume name ?
 	return B_OK;
 }
@@ -98,7 +94,6 @@ vmwfs_write_fs_info(fs_volume* volume, const struct fs_info* info, uint32 mask)
 status_t
 vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32* _flags, bool reenter)
 {
-	CALLED();
 	vnode->private_node = NULL;
 	vnode->ops = &vnode_ops;
 	_flags = 0;
@@ -109,7 +104,7 @@ vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32
 		dprintf("get_vnode : unable to find inode %lld\n", id);
 		return B_ENTRY_NOT_FOUND;
 	}
-	
+
 	vnode->private_node = node;
 
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);

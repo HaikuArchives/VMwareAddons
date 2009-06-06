@@ -31,56 +31,56 @@ VMWNode::~VMWNode()
 
 ssize_t
 VMWNode::CopyPathTo(char* buffer, size_t buffer_length, const char* to_append)
-{	
+{
 	if (parent == NULL) { // This is the root node
 		if (to_append == NULL || to_append[0] == '\0'
 			|| strcmp(to_append, ".") == 0 || strcmp(to_append, "..") == 0) {
 			memset(buffer, 0, buffer_length);
 			return 0;
 		}
-		
+
 		size_t length = strlen(to_append);
-		
+
 		if (length >= buffer_length)
 			return -1;
-		
+
 		strcpy(buffer, to_append);
 		return length;
 	}
-	
+
 	if (to_append != NULL) {
 		if (strcmp(to_append, "..") == 0)
 			return parent->CopyPathTo(buffer, buffer_length);
-	
+
 		if (strcmp(to_append, ".") == 0)
-			to_append = NULL;	
+			to_append = NULL;
 	}
-	
+
 	ssize_t previous_length = parent->CopyPathTo(buffer, buffer_length);
-	
+
 	if (previous_length < 0)
 		return -1;
-	
+
 	bool append_slash = (previous_length > 0);
-	
+
 	size_t new_length = previous_length + (append_slash ? 1 : 0) + name_length;
-	
+
 	if (to_append != NULL)
 		new_length += strlen(to_append) + 1;
-	
+
 	if (new_length >= buffer_length) // No space left
 		return -1;
-	
+
 	if (append_slash) // Need to add a slash after the previous item
 		strcat(buffer, "/");
-	
+
 	strcat(buffer, name);
-	
+
 	if (to_append != NULL) {
 		strcat(buffer, "/");
 		strcat(buffer, to_append);
 	}
-	
+
 	return new_length;
 }
 
