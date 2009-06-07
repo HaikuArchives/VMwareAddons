@@ -66,7 +66,7 @@ vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 {
 	VMWNode* node = (VMWNode*)dir->private_node;
 
-	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
 	if (length < 0)
 		return B_BUFFER_OVERFLOW;
 
