@@ -61,7 +61,6 @@ vmwfs_open_dir(fs_volume* volume, fs_vnode* vnode, void** _cookie)
 	status_t ret = shared_folders->OpenDir(path_buffer, &cookie->handle);
 
 	if (ret != B_OK) {
-		dprintf("OpenDir failed : %s (%ld)\n", strerror(ret), ret);
 		free(cookie);
 		return ret;
 	}
@@ -87,7 +86,6 @@ vmwfs_free_dir_cookie(fs_volume* volume, fs_vnode* vnode, void* cookie)
 status_t
 vmwfs_read_dir(fs_volume* volume, fs_vnode* vnode, void* _cookie, struct dirent* buffer, size_t bufferSize, uint32* _num)
 {
-	VMWNode* root = (VMWNode*)volume->private_volume;
 	VMWNode* node = (VMWNode*)vnode->private_node;
 	dir_cookie* cookie = (dir_cookie*)_cookie;
 
@@ -98,16 +96,14 @@ vmwfs_read_dir(fs_volume* volume, fs_vnode* vnode, void* _cookie, struct dirent*
 		return B_OK;
 	}
 
-	if (ret != B_OK) {
-		dprintf("ReadDir failed : %s (%ld)\n", strerror(ret), ret);
+	if (ret != B_OK)
 		return ret;
-	}
 
 	VMWNode* child_node = node->GetChild(buffer->d_name);
 	if (child_node == NULL)
 		return B_NO_MEMORY;
 
-	buffer->d_dev = root->GetInode();
+	buffer->d_dev = device_id;
 	buffer->d_ino = child_node->GetInode();
 	buffer->d_reclen = sizeof(struct dirent) + strlen(buffer->d_name);
 

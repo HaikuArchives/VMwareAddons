@@ -57,7 +57,7 @@ fs_volume_ops volume_ops = {
 fs_vnode_ops vnode_ops = {
 	/* vnode operations */
 	&vmwfs_lookup,
-	&vmwfs_get_vnode_name,
+	NULL,						//vmwfs_get_vnode_name
 
 	&vmwfs_put_vnode,
 	&vmwfs_remove_vnode,

@@ -100,10 +100,8 @@ vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32
 
 	VMWNode* node = root_node->GetChild(id);
 
-	if (node == NULL) {
-		dprintf("get_vnode : unable to find inode %lld\n", id);
+	if (node == NULL)
 		return B_ENTRY_NOT_FOUND;
-	}
 
 	vnode->private_node = node;
 
@@ -114,10 +112,8 @@ vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32
 	vmw_attributes attributes;
 	bool is_dir;
 	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes, &is_dir);
-	if (ret != B_OK) {
-		dprintf("get_vnode : Error getting informations on %lld, path %s : %s\n", id, path_buffer, strerror(ret));
+	if (ret != B_OK)
 		return ret;
-	}
 
 	*_type = 0;
 	*_type |= (CAN_READ(attributes) ? S_IRUSR | S_IRGRP | S_IROTH : 0);

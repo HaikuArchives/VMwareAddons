@@ -15,8 +15,6 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 		return B_BUFFER_OVERFLOW;
 
 	status_t ret = shared_folders->GetAttributes(path_buffer);
-	dprintf("GetAttributes : lookup %s in %s (path %s) : %s (%ld)\n",
-		name, dir_node->GetName(), path_buffer, strerror(ret), ret);
 	if (ret != B_OK)
 		return ret;
 
@@ -89,7 +87,6 @@ vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnod
 
 
 	length = dst_dir->CopyPathTo(path_buffer_dest, B_PATH_NAME_LENGTH, toName);
-	dprintf("%s : CopyPathTo set the buffer to %s, length %ld\n", __FUNCTION__, path_buffer_dest, length);
 	if (length < 0)
 		return B_BUFFER_OVERFLOW;
 
@@ -110,13 +107,8 @@ vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 	vmw_attributes attributes;
 	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes);
 
-	if (ret != B_OK) {
-		dprintf("GetAttributes failed : %s (%ld)\n", strerror(ret), ret);
+	if (ret != B_OK)
 		return ret;
-	}
-
-	if (geteuid() == 0 && ((mode & X_OK) != X_OK || CAN_EXEC(attributes)))
-		return B_OK;
 
 	if (((mode & R_OK) == R_OK && !CAN_READ(attributes))
 		|| ((mode & W_OK) == W_OK && !CAN_WRITE(attributes))
@@ -139,10 +131,8 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	bool is_dir;
 	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes, &is_dir);
 
-	if (ret != B_OK) {
-		dprintf("GetAttributes failed : %s (%ld)\n", strerror(ret), ret);
+	if (ret != B_OK)
 		return ret;
-	}
 
 	stat->st_dev = device_id;
 	stat->st_ino = node->GetInode();
