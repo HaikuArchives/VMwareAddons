@@ -9,7 +9,7 @@
 // Application constants
 #define APP_SIG "application/x-vnd.VinDuv.VMWAddOns"
 #define APP_NAME "VMW Add-ons"
-#define APP_VERSION "1.0"
+#define APP_VERSION "1.1"
 #define TRAY_NAME "vmware add-ons"
 
 // Message constants

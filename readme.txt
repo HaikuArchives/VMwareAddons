@@ -1,4 +1,4 @@
-VMW Add-ons v1.0
+VMW Add-ons v1.1.0
 By Vincent Duvert <vincent.duvert@free.fr>
 OsDrawer page : http://dev.osdrawer.net/projects/show/vmwaddons
 
