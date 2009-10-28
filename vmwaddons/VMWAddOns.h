@@ -18,6 +18,7 @@
 #define CLIPBOARD_SHARING 'clSh'
 #define REMOVE_FROM_DESKBAR 'rmDe'
 #define CLIPBOARD_POLL 'clPo'
+#define CLOCK_POLL 'ckPo'
 #define SHRINK_DISKS 'shDk'
 
 #endif

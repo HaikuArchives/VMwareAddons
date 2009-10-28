@@ -46,6 +46,7 @@ private:
 
 	BClipboard*				system_clipboard;
 	BMessageRunner*			clipboard_poller;
+	BMessageRunner*			clock_sync;
 
 	VMWBackdoor				backdoor;
 };

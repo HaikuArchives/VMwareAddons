@@ -58,7 +58,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS= be
+LIBS= be stdc++
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -98,7 +98,7 @@ WARNINGS = ALL
 #	specify whether image symbols will be created
 #	so that stack crawls in the debugger are meaningful
 #	if TRUE symbols will be created
-SYMBOLS = 
+SYMBOLS = TRUE
 
 #	specify debug settings
 #	if TRUE will allow application to be run from a source-level
@@ -108,6 +108,7 @@ DEBUGGER = TRUE
 ifeq ($(RELEASE),1)
 	OPTIMIZE= FULL
 	DEFINES= PERSISTENT_TRAY
+	SYMBOLS= FALSE
 	DEBUGGER= FALSE
 endif
 
@@ -115,7 +116,7 @@ endif
 COMPILER_FLAGS =
 
 #	specify additional linker flags
-LINKER_FLAGS =
+LINKER_FLAGS = 
 
 #	specify the version of this particular item
 #	(for example, -app 3 4 0 d 0 -short 340 -long "340 "`echo -n -e '\302\251'`"1999 GNU GPL") 

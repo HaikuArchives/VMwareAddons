@@ -117,6 +117,8 @@ COMPILER_FLAGS =
 #	specify additional linker flags
 LINKER_FLAGS = /system/servers/input_server
 
+INSTALL_DIR = /boot/home/config/add-ons/input_server/filters
+
 #	specify the version of this particular item
 #	(for example, -app 3 4 0 d 0 -short 340 -long "340 "`echo -n -e '\302\251'`"1999 GNU GPL") 
 #	This may also be specified in a resource.

@@ -13,9 +13,12 @@ public:
 				VMWBackdoor();
 	virtual		~VMWBackdoor();
 
-	status_t	SyncCursor(BMessage* cursor_message);
+	status_t	EnableMouseSharing();
+	status_t	DisableMouseSharing();
+	status_t	GetCursorPosition(int32& x, int32& y);
 	status_t	GetHostClipboard(char** text, size_t *text_length);
 	status_t	SetHostClipboard(char* text, size_t length);
+	int32		GetHostClock();
 };
 
 #endif

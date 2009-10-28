@@ -10,7 +10,6 @@
 
 #include <Alert.h>
 #include <Deskbar.h>
-#include <Resources.h>
 #include <Roster.h>
 #include <MenuItem.h>
 #include <Mime.h>
@@ -21,6 +20,9 @@
 #include "icons.h"
 
 VMWAddOnsSettings settings;
+
+#define CLIP_POLL_DELAY 1000000
+#define CLOCK_POLL_DELAY 30000000
 
 extern "C" _EXPORT BView* instantiate_deskbar_item(void)
 {
@@ -45,6 +47,7 @@ VMWAddOnsTray::init()
 {
 	system_clipboard = new BClipboard("system");
 	clipboard_poller = NULL;
+	clock_sync = NULL;
 	cleanup_in_process = false;
 
 	icon_all = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
@@ -76,6 +79,7 @@ VMWAddOnsTray::~VMWAddOnsTray()
 
 	delete system_clipboard;
 	delete clipboard_poller;
+	delete clock_sync;
 }
 
 void
@@ -231,6 +235,14 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 
 		break;
 
+		case CLOCK_POLL:
+		{
+			int32 clock_value = backdoor.GetHostClock();
+			if (clock_value > 0)
+				set_real_time_clock(clock_value);
+		}
+		break;
+
 		case SHRINK_DISKS:
 		{
 			thread_id th = spawn_thread(VMWAddOnsCleanup::Start,
@@ -252,17 +264,19 @@ VMWAddOnsTray::AttachedToWindow()
 {
 	if (backdoor.InVMware())
 		SetClipboardSharing(settings.GetBool("clip_enabled", true));
+	
+	clock_sync = new BMessageRunner(this, new BMessage(CLOCK_POLL), CLOCK_POLL_DELAY);
 }
 
 void
 VMWAddOnsTray::SetClipboardSharing(bool enable)
 {
-	if (clipboard_poller != NULL) delete clipboard_poller;
+	delete clipboard_poller;
 	clipboard_poller = NULL;
 
 	if (enable) {
 		system_clipboard->StartWatching(this);
-		clipboard_poller = new BMessageRunner(this, new BMessage(CLIPBOARD_POLL), 1000000);
+		clipboard_poller = new BMessageRunner(this, new BMessage(CLIPBOARD_POLL), CLIP_POLL_DELAY);
 	} else {
 		system_clipboard->StopWatching(this);
 	}

@@ -30,7 +30,6 @@ public:
 
 private:
 	VMWSettingsWatcher*			settings_watcher;
-	VMWBackdoor					backdoor;
 };
 
 #endif	/* VMW_MOUSE_FILTER_H */

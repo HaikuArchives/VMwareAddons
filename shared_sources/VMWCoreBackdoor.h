@@ -37,7 +37,7 @@ public:
 	status_t	CloseRPCChannel();
 
 protected:
-	void		BackdoorCall(regs_t* regs, ulong command, ulong param);
+	void		BackdoorCall(regs_t* regs, ulong command, ulong param = 0);
 
 private:
 	void		BackdoorRPCCall(regs_t* regs, ulong command, ulong param);

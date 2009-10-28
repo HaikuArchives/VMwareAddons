@@ -54,7 +54,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS=
+LIBS= gcc /boot/develop/abi/x86/gcc4/tools/gcc-4.3.3-haiku-090629/lib/libstdc++.a
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -105,12 +105,9 @@ DEBUGGER =
 COMPILER_FLAGS = -Werror
 
 #	specify additional linker flags
-LINKER_FLAGS = -lgcc
+LINKER_FLAGS = 
+
+INSTALL_DIR = /boot/home/config/add-ons/kernel/file_systems
 
 ## include the makefile-engine
 include /boot/develop/etc/makefile-engine
-
-install: obj.x86/$(NAME)
-	rm -f /boot/home/config/add-ons/kernel/file_systems/$(NAME)
-	mkdir -p /boot/home/config/add-ons/kernel/file_systems/
-	cp obj.x86/$(NAME) /boot/home/config/add-ons/kernel/file_systems/
