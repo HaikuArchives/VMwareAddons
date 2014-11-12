@@ -1,6 +1,6 @@
-VMW Add-ons v1.1.0
+VMW Add-ons v1.1.1
 By Vincent Duvert <vincent.duvert@free.fr>
-OsDrawer page : http://dev.osdrawer.net/projects/show/vmwaddons
+GitHub page : https://github.com/HaikuArchives/VMwareAddons/issues
 
 VMW Add-ons are a set of tools to enhance interaction between Haiku, running in a virtual machine, and the host operating system. It is like the official VMware tools on Windows or Linux.
 It currently provides:
@@ -8,17 +8,12 @@ It currently provides:
  - Mouse sharing: the mouse can seamlessly enter and quit the VM window.
  - Disk compacting: Starts the VMware "shrink" process, which reduce the size of "auto-expanding" virtual disks attached to the virtual machine. The free space on disks is cleaned up previously, in order to get better results.
 
-Installation:
-1) Drag and drop the "vmvmouse" file in the archive on the folder "Drop vmwmouse here" ;-)
-2) Start the "VMWAddOns" application. It will not show any window, but put a small icon into the Deskbar, allowing you to control sharing options. It will automatically restart at each boot.
-VMWAddOns can be placed anywhere, but storing in in the "apps" folder of the boot volume is usually a good idea.
-
 Known bugs and limitations:
 • If you have a volume with more than 800GB of free space, not all free space will be cleaned up on this volume — only 800GB — before the shrink process.
 • When mouse sharing is activated, the cursor speed and acceleration are given by the host operating system (setting them in the "Mouse" control panel will have no effect).
 
 If you encounter a bug or have a feature request, please use the tracker at :
-http://dev.osdrawer.net/projects/vmwaddons/issues
+https://github.com/HaikuArchives/VMwareAddons/issues
 
 Planned features:
 • Shared folders support (or maybe file drag-n-drop, or both)
