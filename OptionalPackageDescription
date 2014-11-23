@@ -1,6 +1,0 @@
-Package:		VMW Add-Ons
-Version:		1.1.0
-Copyright:		2009 Vincent Duvert
-Description:	Tools for using Haiku in a VMware virtual machine.
-License:		MIT
-URL:			http://dev.osdrawer.net/projects/show/vmwaddons

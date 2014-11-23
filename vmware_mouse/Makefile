@@ -7,14 +7,14 @@
 ## Application Specific Settings ---------------------------------------------
 
 # specify the name of the binary
-NAME= vmwaddons
+NAME= vmware_mouse
 
 # specify the type of binary
 #	APP:	Application
 #	SHARED:	Shared library or add-on
 #	STATIC:	Static library archive
 #	DRIVER: Kernel Driver
-TYPE= APP
+TYPE= SHARED
 
 #	add support for new Pe and Eddie features
 #	to fill in generic makefile
@@ -30,13 +30,12 @@ TYPE= APP
 #	if two source files with the same name (source.c or source.cpp)
 #	are included from different directories. Also note that spaces
 #	in folder names do not work well with this makefile.
-SRCS= VMWAddOnsApp.cpp VMWAddOnsSelectWindow.cpp VMWAddOnsTray.cpp VMWAddOnsCleanup.cpp \
-	VMWAddOnsStatusWindow.cpp ../shared_sources/VMWAddOnsSettings.cpp \
+SRCS= VMWareMouse.cpp ../shared_sources/VMWAddOnsSettings.cpp \
 	../shared_sources/VMWCoreBackdoor.cpp ../shared_sources/VMWBackdoor.cpp
 
 #	specify the resource definition files to use
 #	full path or a relative path to the resource file can be used.
-RDEFS= VMWAddOns.rdef
+RDEFS= 
 	
 #	specify the resource files to use. 
 #	full path or a relative path to the resource file can be used.
@@ -58,7 +57,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS= be stdc++
+LIBS= be
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -103,7 +102,7 @@ SYMBOLS = TRUE
 #	specify debug settings
 #	if TRUE will allow application to be run from a source-level
 #	debugger. Note that this will disable all optimzation.
-DEBUGGER = TRUE
+#DEBUGGER = TRUE
 
 ifeq ($(RELEASE),1)
 	OPTIMIZE= FULL
@@ -116,12 +115,14 @@ endif
 COMPILER_FLAGS =
 
 #	specify additional linker flags
-LINKER_FLAGS = 
+LINKER_FLAGS = /system/servers/input_server
+
+INSTALL_DIR = /boot/home/config/non-packaged/add-ons/input_server/filters
 
 #	specify the version of this particular item
 #	(for example, -app 3 4 0 d 0 -short 340 -long "340 "`echo -n -e '\302\251'`"1999 GNU GPL") 
 #	This may also be specified in a resource.
-APP_VERSION = 
+APP_VERSION = 1.1.1
 
 #	(for TYPE == DRIVER only) Specify desired location of driver in the /dev
 #	hierarchy. Used by the driverinstall rule. E.g., DRIVER_PATH = video/usb will
@@ -131,4 +132,10 @@ APP_VERSION =
 DRIVER_PATH = 
 
 ## include the makefile-engine
-include $(BUILDHOME)/etc/makefile-engine
+DEVEL_DIRECTORY := \
+	$(shell if findpaths > /dev/null 2>&1 ; then \
+		findpaths -r "makefile_engine" B_FIND_PATH_DEVELOP_DIRECTORY ; \
+	else \
+		finddir B_SYSTEM_DEVELOP_DIRECTORY ; \
+	fi)
+include $(DEVEL_DIRECTORY)/etc/makefile-engine

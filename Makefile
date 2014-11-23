@@ -1,59 +1,46 @@
-all: build VMWAddOns vmw_mouse
+all: build
 
-VMWAddOns: vmwaddons/obj.x86/vmwaddons
+vmware_tray: vmware_tray/objects/vmware_tray
 	cp $< "$@"
 
-vmw_mouse: vmwmouse/obj.x86/vmwmouse
+vmware_mouse: vmware_mouse/objects/vmware_mouse
+	cp $< $@
+
+#vmw_mouse: vmwmouse/objects/vmwmouse
+#	cp $< $@
+
+#vmware_fs: vmware_fs/objects/vmware_fs
+#	cp $< $@
+
+enhanced_backdoor: enhanced_backdoor/objects/enhanced_backdoor
 	cp $< $@
 
 build:
-	make -C vmwaddons
-	make -C vmwmouse
+	make -C vmware_tray
+	make -C vmware_mouse
+#	make -C vmware_fs
+#	make -C vmwmouse
+	make -C enhanced_backdoor
 
 release: mrproper
-	make RELEASE=1 -C vmwaddons
-	make RELEASE=1 -C vmwmouse
-
-optpkg: release
-	mkdir -p 'root/apps/VMW Add-ons'
-	cp vmwaddons/obj.x86/vmwaddons 'root/apps/VMW Add-ons/VMWAddOns'
-	cp readme.txt 'root/apps/VMW Add-ons'
-
-	mkdir -p root/common/boot/post_install
-	cp post_install_script.sh root/common/boot/post_install/run_vmwaddons.sh
-
-	cp OptionalPackageDescription root/.OptionalPackageDescription
-
-	mkdir -p root/home/config/add-ons/input_server/filters
-	cp vmwmouse/obj.x86/vmwmouse root/home/config/add-ons/input_server/filters
-
-	rm -f vmwaddons.zip
-
-	(cd root && zip -r -9 ../vmwaddons apps common home .OptionalPackageDescription)
-
-	rm -rf root
-
-zip: release
-	mkdir 'VMW Add-Ons'
-
-	cp vmwaddons/obj.x86/vmwaddons 'VMW Add-Ons/VMWAddOns'
-	cp readme.txt 'VMW Add-Ons'
-	cp vmwmouse/obj.x86/vmwmouse 'VMW Add-Ons'
-
-	ln -s /boot/home/config/add-ons/input_server/filters 'VMW Add-Ons/Drop vmwmouse here'
-
-	rm -f vmwaddons.zip
-
-	zip -r -y -9 vmwaddons 'VMW Add-Ons'
-
-	rm -rf 'VMW Add-Ons'
+	make RELEASE=1 -C vmware_tray
+	make RELEASE=1 -C vmware_mouse
+#	make RELEASE=1 -C vmware_fs
+#	make RELEASE=1 -C vmwmouse
+	make RELEASE=1 -C enhanced_backdoor
 
 clean:
-	make -C vmwaddons clean
-	make -C vmwmouse clean
+	make -C vmware_tray clean
+	make -C vmware_mouse
+#	make -C vmware_fs
+#	make -C vmwmouse
+	make -C enhanced_backdoor
 
 mrproper: clean
-	rm -f VMWAddOns
-	rm -f vmw_mouse
+	rm -f vmware_tray
+	rm -f vmware_mouse
+#	rm -f vmware_fs
+#	rm -f vmw_mouse
+	rm -f enhanced_backdoor
 
-.PHONY: build release optpkg zip clean mrproper
+.PHONY: build release clean mrproper
