@@ -7,14 +7,14 @@
 ## Application Specific Settings ---------------------------------------------
 
 # specify the name of the binary
-NAME= vmwfs
+NAME= vmware.accelerant
 
 # specify the type of binary
 #	APP:	Application
 #	SHARED:	Shared library or add-on
 #	STATIC:	Static library archive
 #	DRIVER: Kernel Driver
-TYPE= DRIVER
+TYPE= SHARED
 
 #	add support for new Pe and Eddie features
 #	to fill in generic makefile
@@ -30,10 +30,16 @@ TYPE= DRIVER
 #	if two source files with the same name (source.c or source.cpp)
 #	are included from different directories. Also note that spaces
 #	in folder names do not work well with this makefile.
-SRCS= dir_operations.cpp file_operations.cpp kernel_interface.cpp \
-	../shared_sources/VMWCoreBackdoor.cpp VMWNode.cpp \
-	VMWSharedFolders.cpp vnode_operations.cpp volume_operations.cpp
-
+SRCS= Acceleration.c \
+	Cursor.c \
+	EngineManagment.c \
+	Fifo.c \
+	GetAccelerantHook.c \
+	GetModeInfo.c \
+	GlobalData.c \
+	InitAccelerant.c \
+	ProposeDisplayMode.c \
+	SetDisplayMode.c
 
 #	specify the resource files to use
 #	full path or a relative path to the resource file can be used.
@@ -54,7 +60,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS= gcc
+LIBS=
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -67,7 +73,7 @@ LIBPATHS=
 #	additional paths to look for system headers
 #	thes use the form: #include <header>
 #	source file directories are NOT auto-included here
-SYSTEM_INCLUDE_PATHS = ./inc ./textencoding
+SYSTEM_INCLUDE_PATHS = ../shared
 
 #	additional paths to look for local headers
 #	thes use the form: #include "header"
@@ -107,7 +113,7 @@ COMPILER_FLAGS = -Werror
 #	specify additional linker flags
 LINKER_FLAGS = 
 
-INSTALL_DIR = /boot/home/config/non-packaged/add-ons/kernel/file_systems
+INSTALL_DIR = /boot/home/config/non-packaged/add-ons/accelerants
 
 ## include the makefile-engine
 DEVEL_DIRECTORY := \

@@ -1,6 +1,6 @@
 VMW Add-ons v1.1.1
 By Vincent Duvert <vincent.duvert@free.fr>
-GitHub page : https://github.com/HaikuArchives/VMwareAddons/issues
+GitHub page : https://github.com/HaikuArchives/VMwareAddons
 
 VMW Add-ons are a set of tools to enhance interaction between Haiku, running in a virtual machine, and the host operating system. It is like the official VMware tools on Windows or Linux.
 It currently provides:

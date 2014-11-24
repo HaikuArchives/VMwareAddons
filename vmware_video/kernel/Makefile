@@ -7,7 +7,7 @@
 ## Application Specific Settings ---------------------------------------------
 
 # specify the name of the binary
-NAME= vmwfs
+NAME= vmware
 
 # specify the type of binary
 #	APP:	Application
@@ -30,9 +30,7 @@ TYPE= DRIVER
 #	if two source files with the same name (source.c or source.cpp)
 #	are included from different directories. Also note that spaces
 #	in folder names do not work well with this makefile.
-SRCS= dir_operations.cpp file_operations.cpp kernel_interface.cpp \
-	../shared_sources/VMWCoreBackdoor.cpp VMWNode.cpp \
-	VMWSharedFolders.cpp vnode_operations.cpp volume_operations.cpp
+SRCS= driver.c device.c
 
 
 #	specify the resource files to use
@@ -54,7 +52,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS= gcc
+#LIBS= gcc
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -67,7 +65,7 @@ LIBPATHS=
 #	additional paths to look for system headers
 #	thes use the form: #include <header>
 #	source file directories are NOT auto-included here
-SYSTEM_INCLUDE_PATHS = ./inc ./textencoding
+SYSTEM_INCLUDE_PATHS = ../shared
 
 #	additional paths to look for local headers
 #	thes use the form: #include "header"
@@ -107,7 +105,7 @@ COMPILER_FLAGS = -Werror
 #	specify additional linker flags
 LINKER_FLAGS = 
 
-INSTALL_DIR = /boot/home/config/non-packaged/add-ons/kernel/file_systems
+INSTALL_DIR = /boot/home/config/non-packaged/add-ons/kernel/drivers/bin
 
 ## include the makefile-engine
 DEVEL_DIRECTORY := \

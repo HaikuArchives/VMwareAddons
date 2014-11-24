@@ -6,7 +6,7 @@
 
 VMWNode* root_node;
 
-vint32 mount_count = 0;
+int32 mount_count = 0;
 
 char* path_buffer;
 char* path_buffer_dest;
