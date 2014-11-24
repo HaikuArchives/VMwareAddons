@@ -133,7 +133,6 @@ fs_vnode_ops vnode_ops = {
 	/* support for node and FS layers */
 	NULL,						//vmwfs_create_special_node
 	NULL,						//vmwfs_get_super_vnode
-	NULL,
 };
 
 static file_system_module_info vmw_file_system = {
