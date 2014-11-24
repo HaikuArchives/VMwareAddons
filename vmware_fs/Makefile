@@ -54,8 +54,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-#LIBS= gcc /boot/develop/abi/x86/gcc4/tools/gcc-4.3.3-haiku-090629/lib/libstdc++.a
-LIBS=  gcc /boot/system/develop/tools/x86/lib/gcc/i586-pc-haiku/4.8.3/libstdc++.a
+LIBS= gcc
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -108,7 +107,7 @@ COMPILER_FLAGS = -Werror
 #	specify additional linker flags
 LINKER_FLAGS = 
 
-INSTALL_DIR = /boot/home/config/add-ons/kernel/file_systems
+INSTALL_DIR = /boot/home/config/non-packaged/add-ons/kernel/file_systems
 
 ## include the makefile-engine
 DEVEL_DIRECTORY := \
