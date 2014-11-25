@@ -43,17 +43,18 @@ void
 FILL_RECTANGLE(engine_token *et, uint32 colorIndex,
 	fill_rect_params *list, uint32 count)
 {
+#if 0	
 	uint32 i;
 	fill_rect_params *f;
 
 	for (i = 0; i < count; i++) {
 		f = &list[i];
-#if 0
+
 		TRACE("FILL %lX, %dx%d->%dx%d\n", colorIndex,
 			f->left, f->top, f->right, f->bottom);
-#endif
 		/* TODO */
 	}
+#endif	
 }
 
 
