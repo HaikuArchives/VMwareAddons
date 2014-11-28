@@ -16,7 +16,7 @@
 #include "VMWAddOns.h"
 #include "VMWAddOnsTray.h"
 
-//#define PERSISTENT_TRAY
+#define PERSISTENT_TRAY
 
 VMWAddOnsApp::VMWAddOnsApp()
 	: BApplication(APP_SIG)
