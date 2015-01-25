@@ -62,23 +62,25 @@ VMWMouseFilter::Filter(BMessage* message, BList* /*outlist*/)
 {
 	static BScreen screen;
 	
-	if (!activated)
+	if (!activated || message->what != B_MOUSE_MOVED)
 		return B_DISPATCH_MESSAGE;
 	
-	if (message->what != B_MOUSE_MOVED && message->what != B_MOUSE_DOWN
-		&& message->what != B_MOUSE_UP && !message->HasFloat("be:delta_x"))
-		return B_DISPATCH_MESSAGE;
-
 	int32 x, y;
+	
 	status_t ret = backdoor.GetCursorPosition(x, y);
+	
 	if (ret == B_OK) {
 		BRect frame = screen.Frame();
 		message->ReplacePoint("where", BPoint(x * frame.Width() / 65535, y * frame.Height() / 65535));
-	} else if (ret == B_ERROR) {
-		// Reset the mouse settings
-		backdoor.DisableMouseSharing();
-		backdoor.EnableMouseSharing();
+		return B_DISPATCH_MESSAGE;
 	}
+	
+	if (ret == B_INTERRUPTED) // Spurious event
+		return B_SKIP_MESSAGE;
+
+	// An error occurred, reset the mouse settings
+	backdoor.DisableMouseSharing();
+	backdoor.EnableMouseSharing();
 
 	return B_DISPATCH_MESSAGE;
 }
