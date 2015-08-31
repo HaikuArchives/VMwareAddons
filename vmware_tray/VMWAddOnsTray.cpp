@@ -262,6 +262,16 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 void
 VMWAddOnsTray::AttachedToWindow()
 {
+	if (Parent() != NULL) {
+		if ((Parent()->Flags() & B_DRAW_ON_CHILDREN) != 0)
+			SetViewColor(B_TRANSPARENT_COLOR);
+		else
+			SetViewColor(Parent()->ViewColor());
+	} else
+		SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+
+	SetLowColor(ViewColor());
+
 	if (backdoor.InVMware())
 		SetClipboardSharing(settings.GetBool("clip_enabled", true));
 	
