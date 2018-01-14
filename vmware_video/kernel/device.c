@@ -63,7 +63,7 @@ CheckCapabilities()
 	 * but just in case... */
 	WriteReg(SVGA_REG_ID, SVGA_ID_2);
 	if ((id = ReadReg(SVGA_REG_ID)) != SVGA_ID_2) {
-		TRACE("SVGA_REG_ID is %ld, not %d\n", id, SVGA_REG_ID);
+		TRACE("SVGA_REG_ID is %" B_PRId32 ", not %d\n", id, SVGA_REG_ID);
 		return B_ERROR;
 	}
 	TRACE("SVGA_REG_ID OK\n");
@@ -71,13 +71,13 @@ CheckCapabilities()
 	/* Grab some info */
 	si->maxWidth = ReadReg(SVGA_REG_MAX_WIDTH);
 	si->maxHeight = ReadReg(SVGA_REG_MAX_HEIGHT);
-	TRACE("max resolution: %ldx%ld\n", si->maxWidth, si->maxHeight);
+	TRACE("max resolution: %" B_PRId32 "x%" B_PRId32 "\n", si->maxWidth, si->maxHeight);
 	si->fbDma = (void *)ReadReg(SVGA_REG_FB_START);
 	si->fbSize = ReadReg(SVGA_REG_VRAM_SIZE);
-	TRACE("frame buffer: %p, size %ld\n", si->fbDma, si->fbSize);
+	TRACE("frame buffer: %p, size %" B_PRId32 "\n", si->fbDma, si->fbSize);
 	si->fifoDma = (void *)ReadReg(SVGA_REG_MEM_START);
 	si->fifoSize = ReadReg(SVGA_REG_MEM_SIZE) & ~3;
-	TRACE("fifo: %p, size %ld\n", si->fifoDma, si->fifoSize);
+	TRACE("fifo: %p, size %" B_PRId32 "\n", si->fifoDma, si->fifoSize);
 	si->capabilities = ReadReg(SVGA_REG_CAPABILITIES);
 	PrintCapabilities(si->capabilities);
 	si->fifoMin = (si->capabilities & SVGA_CAP_EXTENDED_FIFO) ?
@@ -108,8 +108,8 @@ MapDevice()
 		TRACE("failed to map frame buffer\n");
 		return si->fbArea;
 	}
-	TRACE("frame buffer mapped: %p->%p, area %ld, size %ld, write "
-		"combined: %d\n", si->fbDma, si->fb, si->fbArea,
+	TRACE("frame buffer mapped: %p->%p, area %" B_PRId32 ", size %" B_PRId32 ", write "
+		"combined: %" B_PRId32 "\n", si->fbDma, si->fb, si->fbArea,
 		si->fbSize, writeCombined);
 
 	/* Map the fifo */
@@ -121,7 +121,7 @@ MapDevice()
 		delete_area(si->fbArea);
 		return si->fifoArea;
 	}
-	TRACE("fifo mapped: %p->%p, area %ld, size %ld\n", si->fifoDma,
+	TRACE("fifo mapped: %p->%p, area %" B_PRId32 ", size %" B_PRId32 "\n", si->fifoDma,
 		si->fifo, si->fifoArea, si->fifoSize);
 
 	return B_OK;
@@ -183,7 +183,7 @@ OpenHook(const char *name, uint32 flags, void **cookie)
 	pci_info *pcii = &gPd->pcii;
 	uint32 tmpUlong;
 
-	TRACE("OpenHook (%s, %ld)\n", name, flags);
+	TRACE("OpenHook (%s, %" B_PRId32 ")\n", name, flags);
 	ACQUIRE_BEN(gPd->kernel);
 
 	if (gPd->isOpen)
@@ -212,7 +212,7 @@ freeShared:
 
 done:
 	RELEASE_BEN(gPd->kernel);
-	TRACE("OpenHook: %ld\n", ret);
+	TRACE("OpenHook: %" B_PRId32 "\n", ret);
 	return ret;
 }
 
@@ -363,7 +363,7 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 
 	}
 
-	TRACE("ioctl: %ld, %p, %ld\n", msg, buf, len);
+	TRACE("ioctl: %" B_PRId32 ", %p, %" B_PRId32 "\n", msg, buf, (int32)len);
 	return B_DEV_INVALID_IOCTL;
 }
 

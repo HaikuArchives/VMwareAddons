@@ -61,7 +61,7 @@ backdoor_call(regs_t* regs, ulong command, ulong param)
 	
 	// The VMWare backdoor get/sets EBX, but this register
 	// is used by PIC. So we use ESI instead.
-	
+#ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx			\n\t" // Save ebx
 		"movl	%%esi,	%%ebx	\n\t" // esi => ebx
@@ -73,6 +73,19 @@ backdoor_call(regs_t* regs, ulong command, ulong param)
 		:"=a"(regs->eax), "=S"(regs->esi), "=c"(regs->ecx), "=d"(regs->edx)
 		:"a"(regs->eax), "S"(regs->esi), "c"(regs->ecx), "d"(regs->edx)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx			\n\t" // Save rbx
+		"movl	%%esi,	%%ebx	\n\t" // esi => ebx
+
+		"inl	(%%dx)			\n\t" // Backdoor call
+		
+		"movl	%%ebx,	%%esi	\n\t" // ebx => esi
+		"popq	%%rbx			\n\t" // Restore rbx
+		:"=a"(regs->eax), "=S"(regs->esi), "=c"(regs->ecx), "=d"(regs->edx)
+		:"a"(regs->eax), "S"(regs->esi), "c"(regs->ecx), "d"(regs->edx)
+	);
+#endif
 }
 
 extern "C" void
@@ -86,19 +99,33 @@ backdoor_rpc_call(regs_t* regs, ulong command, ulong param, ulong port, ulong co
 	regs->edx = port;
 	regs->esi = cookie1;
 	regs->edi = cookie2;
-	
+#ifdef __i386__	
 	asm volatile(
-		"pushl	%%ebx				\n\t" // Save ebx
+		"pushl	%%ebx				\n\t" // Save rbx
 		"movl	%%eax,	%%ebx		\n\t" // eax => ebx
 		"movl	$0x564D5868, %%eax	\n\t" // Init eax
 		
 		"inl	(%%dx)				\n\t" // Backdoor call
 		
 		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
-		"popl	%%ebx				\n\t" // Restore ebx
+		"popl	%%ebx				\n\t" // Restore rbx
 		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
 		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx				\n\t" // Save rbx
+		"movl	%%eax,	%%ebx		\n\t" // eax => ebx
+		"movl	$0x564D5868, %%eax	\n\t" // Init eax
+		
+		"inl	(%%dx)				\n\t" // Backdoor call
+		
+		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
+		"popq	%%rbx				\n\t" // Restore rbx
+		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
+		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
+	);
+#endif
 }
 
 extern "C" void
@@ -110,10 +137,10 @@ backdoor_rpc_send(regs_t* regs, char* data, size_t length, ulong port, ulong coo
 	regs->edx = port;
 	regs->esi = (ulong)data;
 	regs->edi = cookie2;
-	
+#ifdef __i386__	
 	asm volatile(
-		"pushl	%%ebx				\n\t" // Save ebx
-		"pushl	%%ebp				\n\t" // and ebp
+		"pushl	%%ebx				\n\t" // Save rbx
+		"pushl	%%ebp				\n\t" // and rbp
 		"movl	%%eax,	%%ebp		\n\t" // eax => ebp
 		"movl	$0x564D5868, %%eax	\n\t" // Init eax
 		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
@@ -122,11 +149,29 @@ backdoor_rpc_send(regs_t* regs, char* data, size_t length, ulong port, ulong coo
 		"rep outsb (%%esi), (%%dx)	\n\t"
 		
 		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
-		"popl	%%ebp				\n\t" // Restore ebp
-		"popl	%%ebx				\n\t" // and ebx
+		"popl	%%ebp				\n\t" // Restore rbp
+		"popl	%%ebx				\n\t" // and rbx
 		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
 		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx				\n\t" // Save rbx
+		"pushq	%%rbp				\n\t" // and rbp
+		"movl	%%eax,	%%ebp		\n\t" // eax => ebp
+		"movl	$0x564D5868, %%eax	\n\t" // Init eax
+		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
+		
+		"cld						\n\t" // Backdoor call
+		"rep outsb (%%esi), (%%dx)	\n\t"
+		
+		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
+		"popq	%%rbp				\n\t" // Restore rbp
+		"popq	%%rbx				\n\t" // and rbx
+		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
+		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
+	);
+#endif
 }
 
 extern "C" void
@@ -140,7 +185,7 @@ backdoor_rpc_get(regs_t* regs, char* data, size_t length, ulong port, ulong cook
 	regs->edx = port;
 	regs->esi = cookie1;
 	regs->edi = (ulong)data;
-	
+#ifdef __i386__	
 	asm volatile(
 		"pushl	%%ebx				\n\t" // Save ebx
 		"pushl	%%ebp				\n\t" // and ebp
@@ -157,6 +202,24 @@ backdoor_rpc_get(regs_t* regs, char* data, size_t length, ulong port, ulong cook
 		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
 		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx				\n\t" // Save rbx
+		"pushq	%%rbp				\n\t" // and rbp
+		"movl	%%eax,	%%ebp		\n\t" // eax => ebp
+		"movl	$0x564D5868, %%eax	\n\t" // Init eax
+		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
+		
+		"cld						\n\t" // Backdoor call
+		"rep insb (%%dx), (%%edi)	\n\t"
+		
+		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
+		"popq	%%rbp				\n\t" // Restore rbp
+		"popq	%%rbx				\n\t" // and rbx
+		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
+		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
+	);
+#endif
 }
 
 // Avoid segfault when trying to access the backdoor on real hardware...

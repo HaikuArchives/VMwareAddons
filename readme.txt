@@ -1,4 +1,4 @@
-VMW Add-ons v1.1.1
+VMW Add-ons v1.2.0
 By Vincent Duvert <vincent.duvert@free.fr>
 GitHub page : https://github.com/HaikuArchives/VMwareAddons
 

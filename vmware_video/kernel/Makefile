@@ -100,7 +100,7 @@ SYMBOLS = TRUE
 DEBUGGER =
 
 #	specify additional compiler flags for all files
-COMPILER_FLAGS = -Werror
+COMPILER_FLAGS = -fPIC
 
 #	specify additional linker flags
 LINKER_FLAGS = 

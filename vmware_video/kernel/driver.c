@@ -46,7 +46,7 @@ init_hardware(void)
 
 	put_module(B_PCI_MODULE_NAME);
 
-	TRACE("init_hardware: %ld\n", ret);
+	TRACE("init_hardware: %" B_PRId32 "\n", ret);
 	return ret;
 }
 
@@ -97,7 +97,7 @@ init_driver(void)
 	gPd->si = NULL;
 
 done:
-	TRACE("init_driver: %ld\n", ret);
+	TRACE("init_driver: %" B_PRId32 "\n", ret);
 	return ret;
 }
 

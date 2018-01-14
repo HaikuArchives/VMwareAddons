@@ -1,5 +1,7 @@
 /*
 	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+	Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
+	Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
@@ -10,22 +12,6 @@
 #include <string.h>
 #include <syslog.h>
 
-// http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
-#define VMW_BACK_GET_CURSOR 		0x04
-#define VMW_BACK_GET_CLIP_LENGTH	0x06
-#define VMW_BACK_GET_CLIP_DATA		0x07
-#define VMW_BACK_SET_CLIP_LENGTH	0x08
-#define VMW_BACK_SET_CLIP_DATA		0x09
-#define VMW_BACK_GET_HOST_TIME		0x17
-#define VMW_BACK_MOUSE_DATA			0x27
-#define VMW_BACK_MOUSE_STATUS		0x28
-#define VMW_BACK_MOUSE_COMMAND		0x29
-
-// Mouse sharing commands
-#define VMW_BACK_MOUSE_VERSION		0x3442554a
-#define VMW_BACK_MOUSE_DISABLE		0x000000f5
-#define VMW_BACK_MOUSE_READ			0x45414552
-#define VMW_BACK_MOUSE_REQ_ABSOLUTE	0x53424152
 
 VMWBackdoor::VMWBackdoor()
 {
@@ -110,47 +96,55 @@ VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
 {
 	if (!InVMware()) return B_NOT_ALLOWED;
 
-	regs_t regs;
-	BackdoorCall(&regs, VMW_BACK_GET_CLIP_LENGTH, 0);
-
+	char *buffer = NULL;
 	if (text == NULL) {
-		// We just want to clear the clipboard if it contains data ;
-		// This is needed to set data into it.
 		return B_OK;
 	}
 
-	ulong length = regs.eax;
+	struct vm_backdoor frame;
+	uint32_t total, left;
 
-	*text_length = length;
+	bzero(&frame, sizeof(frame));
 
-	if (length == 0)
-		return B_OK;
+	frame.eax.word      = VMW_BACK_MAGIC;
+	frame.ecx.part.low  = VMW_BACK_GET_CLIP_LENGTH;
+	frame.ecx.part.high = 0xffff;
+	frame.edx.part.low  = VMW_BACK_RPC_PORT;
+	frame.edx.part.high = 0;
 
-	if (length > 0xFFFF) // No data (or an error occurred)
+	BACKDOOR_OP("inl %%dx, %%eax;", &frame);
+
+	total = left = frame.eax.word;
+
+	if (total == 0 || total > 0xffff) {
 		return B_ERROR;
+	}
 
-	char* buffer = NULL;
-	buffer = (char*)malloc(length + 1);
-
-	if (buffer == NULL)
+	if ((buffer = (char*)malloc((size_t)(total + 1))) == NULL)
 		return B_NO_MEMORY;
 
-	buffer[length] = '\0';
+	for (;;) {
+		bzero(&frame, sizeof(frame));
+
+		frame.eax.word      = VMW_BACK_MAGIC;
+		frame.ecx.part.low  = VMW_BACK_GET_CLIP_DATA;
+		frame.ecx.part.high = 0xffff;
+		frame.edx.part.low  = VMW_BACK_RPC_PORT;
+		frame.edx.part.high = 0;
+
+		BACKDOOR_OP("inl %%dx, %%eax;", &frame);
+
+		memcpy(buffer + (total - left), &frame.eax.word, left > 4 ? 4 : left);
+
+		if (left <= 4) {
+			buffer[total] = '\0';
+			break;
+		} else
+			left -= 4;
+	}
 
 	*text = buffer;
-
-	long i = length;
-
-	while (i > 0) {
-		regs.eax = 0;
-
-		BackdoorCall(&regs, VMW_BACK_GET_CLIP_DATA, 0);
-
-		memcpy(buffer, &regs.eax, (i < (signed)sizeof(regs.eax) ? i : sizeof(regs.eax)));
-
-		buffer += sizeof(regs.eax);
-		i -= sizeof(regs.eax);
-	}
+	*text_length = strlen(buffer);
 
 	return B_OK;
 }
@@ -160,24 +154,45 @@ VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 {
 	if (!InVMware()) return B_NOT_ALLOWED;
 
-	GetHostClipboard(NULL, NULL);
+	if(text==NULL || text_length==0)
+		return B_ERROR;
 
-	regs_t regs;
-	BackdoorCall(&regs, VMW_BACK_SET_CLIP_LENGTH, text_length);
+	text[text_length]='\0';
+	
+	struct vm_backdoor frame;
+	uint32_t total, left;
 
-	if (regs.eax != 0) return B_ERROR;
+	bzero(&frame, sizeof(frame));
 
-	long i = text_length;
-	char* buffer = text;
+	frame.eax.word      = VMW_BACK_MAGIC;
+	frame.ecx.part.low  = VMW_BACK_SET_CLIP_LENGTH;
+	frame.ecx.part.high = 0xffff;
+	frame.edx.part.low  = VMW_BACK_RPC_PORT;
+	frame.edx.part.high = 0;
+	frame.ebx.word      = (uint32_t)strlen(text);
 
-	while (i > 0) {
-		ulong data = 0;
-		memcpy(&data, buffer, (i < (signed)sizeof(data) ? i : sizeof(data)));
+	BACKDOOR_OP("inl %%dx, %%eax;", &frame);
 
-		BackdoorCall(&regs, VMW_BACK_SET_CLIP_DATA, data);
+	total = left = strlen(text);
 
-		buffer += sizeof(data);
-		i -= sizeof(data);
+	for (;;) {
+		bzero(&frame, sizeof(frame));
+
+		frame.eax.word      = VMW_BACK_MAGIC;
+		frame.ecx.part.low  = VMW_BACK_SET_CLIP_DATA;
+		frame.ecx.part.high = 0xffff;
+		frame.edx.part.low  = VMW_BACK_RPC_PORT;
+		frame.edx.part.high = 0;
+
+		memcpy(&frame.ebx.word, text + (total - left),
+			left > 4 ? 4 : left);
+
+		BACKDOOR_OP("inl %%dx, %%eax;", &frame);
+
+		if (left <= 4)
+			break;
+		else
+			left -= 4;
 	}
 
 	return B_OK;

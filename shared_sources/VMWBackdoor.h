@@ -1,5 +1,7 @@
 /*
 	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+	Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
+	Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 

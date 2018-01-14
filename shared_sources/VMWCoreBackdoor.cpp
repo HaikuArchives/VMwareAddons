@@ -1,5 +1,7 @@
 /*
 	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+	Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
+	Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
 	All rights reserved. Distributed under the terms of the MIT License.
 */
 
@@ -13,23 +15,6 @@
 
 #include <SupportDefs.h>
 
-// http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
-#define VMW_BACK_PORT				0x00005658UL
-
-#define VMW_BACK_GET_VERSION		0x0A
-
-#define VMW_BACK_RPC_MAGIC			0x49435052UL
-#define VMW_BACK_RPC_PORT			0x5658
-#define VMW_BACK_RPC_PORT2			0x5659
-#define VMW_BACK_RPC_OPEN			0x0000001EUL
-#define VMW_BACK_RPC_SEND_LENGTH	0x0001001EUL
-#define VMW_BACK_RPC_GET_LENGTH		0x0003001EUL
-#define VMW_BACK_RPC_ACK			0x0005001EUL
-#define VMW_BACK_RPC_CLOSE			0x0006001EUL
-#define VMW_BACK_RPC_OK				0x00010000UL
-#define VMW_BACK_RPC_SEND_L_OK		0x00810000UL
-#define VMW_BACK_RPC_GET_L_OK		0x00830000UL
-
 void
 VMWCoreBackdoor::BackdoorCall(regs_t* regs, ulong command, ulong param)
 {
@@ -40,7 +25,7 @@ VMWCoreBackdoor::BackdoorCall(regs_t* regs, ulong command, ulong param)
 
 	// The VMWare backdoor get/sets EBX, but this register
 	// is used by PIC. So we use ESI instead.
-
+#ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx			\n\t" // Save ebx
 		"movl	%%esi,	%%ebx	\n\t" // esi => ebx
@@ -52,6 +37,19 @@ VMWCoreBackdoor::BackdoorCall(regs_t* regs, ulong command, ulong param)
 		:"=a"(regs->eax), "=S"(regs->esi), "=c"(regs->ecx), "=d"(regs->edx)
 		:"a"(regs->eax), "S"(regs->esi), "c"(regs->ecx), "d"(regs->edx)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx			\n\t" // Save ebx
+		"movl	%%esi,	%%ebx	\n\t" // esi => ebx
+
+		"inl	(%%dx)			\n\t" // Backdoor call
+
+		"movl	%%ebx,	%%esi	\n\t" // ebx => esi
+		"popq	%%rbx			\n\t" // Restore ebx
+		:"=a"(regs->eax), "=S"(regs->esi), "=c"(regs->ecx), "=d"(regs->edx)
+		:"a"(regs->eax), "S"(regs->esi), "c"(regs->ecx), "d"(regs->edx)
+	);
+#endif
 }
 
 void
@@ -65,7 +63,7 @@ VMWCoreBackdoor::BackdoorRPCCall(regs_t* regs, ulong command, ulong param)
 	regs->edx = rpc_channel | VMW_BACK_RPC_PORT;
 	regs->esi = rpc_cookie1;
 	regs->edi = rpc_cookie2;
-
+#ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx				\n\t" // Save ebx
 		"movl	%%eax,	%%ebx		\n\t" // eax => ebx
@@ -78,6 +76,20 @@ VMWCoreBackdoor::BackdoorRPCCall(regs_t* regs, ulong command, ulong param)
 		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
 		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx				\n\t" // Save ebx
+		"movl	%%eax,	%%ebx		\n\t" // eax => ebx
+		"movl	$0x564D5868, %%eax	\n\t" // Init eax
+
+		"inl	(%%dx)				\n\t" // Backdoor call
+
+		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
+		"popq	%%rbx				\n\t" // Restore ebx
+		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
+		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
+	);
+#endif
 }
 
 void
@@ -89,7 +101,7 @@ VMWCoreBackdoor::BackdoorRPCSend(regs_t* regs, char* data, size_t length)
 	regs->edx = rpc_channel | VMW_BACK_RPC_PORT2;
 	regs->esi = (ulong)data;
 	regs->edi = rpc_cookie2;
-
+#ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx				\n\t" // Save ebx
 		"pushl	%%ebp				\n\t" // and ebp
@@ -106,6 +118,24 @@ VMWCoreBackdoor::BackdoorRPCSend(regs_t* regs, char* data, size_t length)
 		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
 		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx				\n\t" // Save ebx
+		"pushq	%%rbp				\n\t" // and ebp
+		"movl	%%eax,	%%ebp		\n\t" // eax => ebp
+		"movl	$0x564D5868, %%eax	\n\t" // Init eax
+		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
+
+		"cld						\n\t" // Backdoor call
+		"rep outsb (%%esi), (%%dx)	\n\t"
+
+		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
+		"popq	%%rbp				\n\t" // Restore ebp
+		"popq	%%rbx				\n\t" // and ebx
+		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
+		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
+	);
+#endif
 }
 
 void
@@ -119,7 +149,7 @@ VMWCoreBackdoor::BackdoorRPCGet(regs_t* regs, char* data, size_t length)
 	regs->edx = rpc_channel | VMW_BACK_RPC_PORT2;
 	regs->esi = rpc_cookie1;
 	regs->edi = (ulong)data;
-
+#ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx				\n\t" // Save ebx
 		"pushl	%%ebp				\n\t" // and ebp
@@ -136,6 +166,24 @@ VMWCoreBackdoor::BackdoorRPCGet(regs_t* regs, char* data, size_t length)
 		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
 		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
 	);
+#else
+	asm volatile(
+		"pushq	%%rbx				\n\t" // Save ebx
+		"pushq	%%rbp				\n\t" // and ebp
+		"movl	%%eax,	%%ebp		\n\t" // eax => ebp
+		"movl	$0x564D5868, %%eax	\n\t" // Init eax
+		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
+
+		"cld						\n\t" // Backdoor call
+		"rep insb (%%dx), (%%edi)	\n\t"
+
+		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
+		"popq	%%rbp				\n\t" // Restore ebp
+		"popq	%%rbx				\n\t" // and ebx
+		:"=a"(regs->eax), "=c"(regs->ecx), "=d"(regs->edx), "=S"(regs->esi), "=D"(regs->edi)
+		:"a"(regs->eax), "c"(regs->ecx), "d"(regs->edx), "S"(regs->esi), "D"(regs->edi)
+	);
+#endif
 }
 
 #ifndef _KERNEL_MODE
