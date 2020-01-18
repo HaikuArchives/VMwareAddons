@@ -156,7 +156,7 @@ CreateShared()
 	gPd->sharedArea = create_area("VMware shared", (void **)&gPd->si,
 		B_ANY_KERNEL_ADDRESS, ROUND_TO_PAGE_SIZE(sizeof(SharedInfo)),
 		B_FULL_LOCK,
-		B_KERNEL_READ_AREA | B_KERNEL_WRITE_AREA | B_USER_CLONEABLE_AREA);
+		B_KERNEL_READ_AREA | B_KERNEL_WRITE_AREA | B_CLONEABLE_AREA);
 	if (gPd->sharedArea < B_OK) {
 		TRACE("failed to create shared area\n");
 		return gPd->sharedArea;
