@@ -290,7 +290,7 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 			return B_OK;
 
 		case VMWARE_FIFO_START:
-			WriteReg(SVGA_REG_ENABLE, 1);
+			//WriteReg(SVGA_REG_ENABLE, 1);
 			WriteReg(SVGA_REG_CONFIG_DONE, 1);
 			return B_OK;
 
@@ -310,6 +310,7 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 			WriteReg(SVGA_REG_WIDTH, dm->virtual_width);
 			WriteReg(SVGA_REG_HEIGHT, dm->virtual_height);
 			WriteReg(SVGA_REG_BITS_PER_PIXEL, BppForSpace(dm->space));
+			WriteReg(SVGA_REG_ENABLE, 1); //HAKILO
 			si->fbOffset = ReadReg(SVGA_REG_FB_OFFSET);
 			si->bytesPerRow = ReadReg(SVGA_REG_BYTES_PER_LINE);
 			ReadReg(SVGA_REG_DEPTH);

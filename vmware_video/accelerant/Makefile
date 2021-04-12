@@ -35,6 +35,7 @@ SRCS= Acceleration.c \
 	EngineManagment.c \
 	Fifo.c \
 	GetAccelerantHook.c \
+	GetDeviceInfo.c \
 	GetModeInfo.c \
 	GlobalData.c \
 	InitAccelerant.c \
