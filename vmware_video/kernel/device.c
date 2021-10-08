@@ -282,11 +282,17 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 
 	switch (msg) {
 		case B_GET_ACCELERANT_SIGNATURE:
-			strcpy((char *)buf, "vmware.accelerant");
+			if (user_strlcpy((char*)buf, "vmware.accelerant",
+				B_FILE_NAME_LENGTH) < B_OK) {
+				return B_BAD_ADDRESS;
+			}
 			return B_OK;
 
 		case VMWARE_GET_PRIVATE_DATA:
-			*((area_id *)buf) = gPd->sharedArea;
+			if (user_memcpy(buf, &gPd->sharedArea, sizeof(gPd->sharedArea))
+				< B_OK) {
+				return B_BAD_ADDRESS;
+			}
 			return B_OK;
 
 		case VMWARE_FIFO_START:
@@ -306,10 +312,12 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 
 		case VMWARE_SET_MODE:
 		{
-			display_mode *dm = buf;
-			WriteReg(SVGA_REG_WIDTH, dm->virtual_width);
-			WriteReg(SVGA_REG_HEIGHT, dm->virtual_height);
-			WriteReg(SVGA_REG_BITS_PER_PIXEL, BppForSpace(dm->space));
+			display_mode dm;
+			if (user_memcpy(&dm, buf, sizeof(display_mode)) < B_OK)
+				return B_BAD_ADDRESS;
+			WriteReg(SVGA_REG_WIDTH, dm.virtual_width);
+			WriteReg(SVGA_REG_HEIGHT, dm.virtual_height);
+			WriteReg(SVGA_REG_BITS_PER_PIXEL, BppForSpace(dm.space));
 			WriteReg(SVGA_REG_ENABLE, 1); //HAKILO
 			si->fbOffset = ReadReg(SVGA_REG_FB_OFFSET);
 			si->bytesPerRow = ReadReg(SVGA_REG_BYTES_PER_LINE);
@@ -323,7 +331,10 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 
 		case VMWARE_SET_PALETTE:
 		{
-			uint8 *color = (uint8 *)buf;
+			uint8 colors[3 * 256];
+			if (user_memcpy(colors, buf, sizeof(colors)) < B_OK)
+				return B_BAD_ADDRESS;
+			uint8 *color = colors;
 			uint32 i;
 			if (ReadReg(SVGA_REG_PSEUDOCOLOR) != 1)
 				return B_ERROR;
@@ -338,7 +349,9 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 
 		case VMWARE_MOVE_CURSOR:
 		{
-			uint16 *pos = buf;
+			uint16 pos[2];
+			if (user_memcpy(pos, buf, sizeof(pos)) < B_OK)
+				return B_BAD_ADDRESS;
 			si->cursorX = pos[0];
 			si->cursorY = pos[1];
 			UpdateCursor(si);
@@ -347,20 +360,17 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 
 		case VMWARE_SHOW_CURSOR:
 		{
-			si->cursorShow = *((bool *)buf);
+			if (user_memcpy(&si->cursorShow, buf, sizeof(bool)) < B_OK)
+				return B_BAD_ADDRESS;
 			UpdateCursor(si);
 			return B_OK;
 		}
 
 		case VMWARE_GET_DEVICE_NAME:
 			dprintf("device: VMWARE_GET_DEVICE_NAME %s\n", gPd->names[0]);
-#ifdef HAIKU_TARGET_PLATFORM_HAIKU
 			if (user_strlcpy((char *)buf, gPd->names[0],
 					B_PATH_NAME_LENGTH) < B_OK)
 				return B_BAD_ADDRESS;
-#else
-			strlcpy((char *)buf, gPd->names[0], B_PATH_NAME_LENGTH);
-#endif
 			return B_OK;
 
 	}
