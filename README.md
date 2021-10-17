@@ -1,4 +1,4 @@
-# VMW Add-ons v1.2.0
+# VMware Add-ons
 
 By Vincent Duvert <vincent.duvert@free.fr>
 GitHub page: https://github.com/HaikuArchives/VMwareAddons
@@ -9,6 +9,8 @@ VMW Add-ons are a set of tools to enhance interaction between Haiku, running in 
  - Clipboard sharing between Haiku and the host OS.
  - Mouse sharing: the mouse can seamlessly enter and quit the VM window.
  - Disk compacting: Starts the VMware "shrink" process, which reduce the size of "auto-expanding" virtual disks attached to the virtual machine. The free space on disks is cleaned up previously, in order to get better results.
+ - Graphics driver for VMware: you can choose your preferred resolution using Screen preflet in Haiku.
+ - Graphics driver for VirtualBox: change grapchics card in VM setting to VMSVGA and video memory size to 64 MB to get higher resolutions working.
 
 **Known bugs and limitations**:
  - If you have a volume with more than 800GB of free space, not all free space will be cleaned up on this volume — only 800GB — before the shrink process.
