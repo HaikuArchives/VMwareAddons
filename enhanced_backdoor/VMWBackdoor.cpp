@@ -163,7 +163,7 @@ backdoor_rpc_send(regs_t* regs, char* data, size_t length, ulong port, ulong coo
 		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
 		
 		"cld						\n\t" // Backdoor call
-		"rep outsb (%%esi), (%%dx)	\n\t"
+		"rep outsb (%%rsi), (%%dx)	\n\t"
 		
 		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
 		"popq	%%rbp				\n\t" // Restore rbp
@@ -211,7 +211,7 @@ backdoor_rpc_get(regs_t* regs, char* data, size_t length, ulong port, ulong cook
 		"movl	$0x00010000, %%ebx	\n\t" // Init ebx
 		
 		"cld						\n\t" // Backdoor call
-		"rep insb (%%dx), (%%edi)	\n\t"
+		"rep insb (%%dx), (%%rdi)	\n\t"
 		
 		"movl	%%ebx,	%%eax		\n\t" // ebx => eax
 		"popq	%%rbp				\n\t" // Restore rbp
