@@ -61,9 +61,9 @@ public:
 
 private:
 	status_t		Delete(const char* path, bool is_dir);
-	off_t			StartCommand();
+	size_t			StartCommand();
 	status_t		ConvertStatus(int vmw_status);
-	void			CopyPath(const char* path, off_t* pos);
+	void			CopyPath(const char* path, size_t* pos);
 
 	VMWCoreBackdoor	backdoor;
 	status_t		init_check;

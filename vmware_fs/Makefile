@@ -54,7 +54,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS= gcc
+LIBS= gcc supc++-kernel
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -67,7 +67,7 @@ LIBPATHS=
 #	additional paths to look for system headers
 #	thes use the form: #include <header>
 #	source file directories are NOT auto-included here
-SYSTEM_INCLUDE_PATHS = ./inc ./textencoding
+SYSTEM_INCLUDE_PATHS =
 
 #	additional paths to look for local headers
 #	thes use the form: #include "header"
@@ -102,7 +102,7 @@ SYMBOLS = TRUE
 DEBUGGER =
 
 #	specify additional compiler flags for all files
-COMPILER_FLAGS = -Werror
+COMPILER_FLAGS =
 
 #	specify additional linker flags
 LINKER_FLAGS = 

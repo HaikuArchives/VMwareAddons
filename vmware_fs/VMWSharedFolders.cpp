@@ -85,7 +85,7 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_OPEN_FILE);
 	SET_32(pos, open_mode & 3);
 
@@ -136,7 +136,7 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 
 	ASSERT(*read_length + length <= rpc_buffer_size);
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_READ_FILE);
 	SET_32(pos, handle);
 	SET_64(pos, offset);
@@ -180,7 +180,7 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 
 	ASSERT(length <= rpc_buffer_size);
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_WRITE_FILE);
 	SET_32(pos, handle);
 	SET_8(pos, 0);
@@ -215,7 +215,7 @@ VMWSharedFolders::CloseFile(file_handle handle)
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_CLOSE_FILE);
 	SET_32(pos, handle);
 
@@ -238,7 +238,7 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_OPEN_DIR);
 	SET_32(pos, path_length);
 	CopyPath(path, &pos);
@@ -270,7 +270,7 @@ VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_READ_DIR);
 	SET_32(pos, handle);
 	SET_32(pos, index);
@@ -308,7 +308,7 @@ VMWSharedFolders::CloseDir(folder_handle handle)
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_CLOSE_DIR);
 	SET_32(pos, handle);
 
@@ -329,7 +329,7 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_GET_ATTR);
 	SET_32(pos, path_length);
 	CopyPath(path, &pos);
@@ -376,7 +376,7 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + sizeof(vmw_attributes) + SIZE_32 + path_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_SET_ATTR);
 	SET_32(pos, mask);
 	SET_8(pos, 0);
@@ -413,7 +413,7 @@ VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_NEW_DIR);
 	SET_32(pos, 0);
 	pos -= SIZE_32;
@@ -448,7 +448,7 @@ VMWSharedFolders::Delete(const char* path, bool is_dir)
 	const size_t path_length = strlen(path);
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, (is_dir ? VMW_CMD_DEL_DIR : VMW_CMD_DEL_FILE));
 	SET_32(pos, path_length);
 	CopyPath(path, &pos);
@@ -497,7 +497,7 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_orig_length + 1 \
 		+ SIZE_32 + path_dest_length + 1;
 
-	off_t pos = StartCommand();
+	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_MOVE_FILE);
 	SET_32(pos, path_orig_length);
 	CopyPath(path_orig, &pos);
@@ -518,7 +518,7 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 	return ret;
 }
 
-off_t
+size_t
 VMWSharedFolders::StartCommand()
 {
 	const char start_bytes[] = { 'f', ' ', '\0', '\0', '\0', '\0' };
@@ -549,7 +549,7 @@ VMWSharedFolders::ConvertStatus(int vmw_status)
 }
 
 void
-VMWSharedFolders::CopyPath(const char* path, off_t* pos)
+VMWSharedFolders::CopyPath(const char* path, size_t* pos)
 {
 	char* dest = rpc_buffer + *pos;
 	while (*path != '\0') {
