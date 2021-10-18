@@ -3,6 +3,8 @@
 
 #include "vmwfs.h"
 
+#define VMWFS_PERMS_MODE_SHIFT    6
+
 typedef struct {
 	file_handle handle;
 	uint32 index;
@@ -17,7 +19,7 @@ vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perm
 	if (length < 0)
 		return B_BUFFER_OVERFLOW;
 
-	status_t ret = shared_folders->CreateDir(path_buffer, perms);
+	status_t ret = shared_folders->CreateDir(path_buffer, perms >> VMWFS_PERMS_MODE_SHIFT);
 
 	return ret;
 }
