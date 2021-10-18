@@ -54,6 +54,16 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
+#  ---
+#  Haiku drivers cannot depend on libstdc++.a, we use libsupc++-kernel.a instead.
+#  As stated by https://gcc.gnu.org/onlinedocs/libstdc++/faq.html#faq.what_is_libsupcxx
+#    If the only functions from libstdc++.a which you need are language support functions
+#    (those listed in clause 18 of the standard, e.g., new and delete),
+#    then try linking against libsupc++.a, which is a subset of libstdc++.a
+#    (Using gcc instead of g++ and explicitly linking in libsupc++.a via -lsupc++ for the final
+#    link step will do it). This library contains only those support routines, one per object file.
+#    But if you are using anything from the rest of the library, such as IOStreams or vectors,
+#    then you'll still need pieces from libstdc++.a
 LIBS= gcc supc++-kernel
 
 #	specify additional paths to directories following the standard
