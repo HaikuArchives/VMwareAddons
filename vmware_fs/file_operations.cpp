@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdint.h>
 
 #include "vmwfs.h"
 
@@ -88,21 +87,16 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 	if (pos < 0)
 		return B_BAD_VALUE;
 
-	if (*length > UINT32_MAX)
-		return B_BUFFER_OVERFLOW;
-
-	uint32 length32 = static_cast<uint32>(*length);
-
 	status_t ret;
-	uint32 to_read, red = 0;
+	uint32 to_read, read = 0;
 
 	do {
-		to_read = ((length32 - red) < IO_SIZE ? length32 - red : IO_SIZE);
-		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + red, (uint8*)buffer + red, &to_read);
-		red += to_read;
-	} while(to_read != 0 && red < *length && ret == B_OK); // to_read == 0 means EOF
+		to_read = static_cast<uint32>((*length - read) < IO_SIZE ? *length - read : IO_SIZE);
+		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + read, (uint8*)buffer + read, &to_read);
+		read += to_read;
+	} while(to_read != 0 && read < *length && ret == B_OK); // to_read == 0 means EOF
 
-	*length = static_cast<size_t>(red);
+	*length = static_cast<size_t>(read);
 
 	return ret;
 }
@@ -113,16 +107,11 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	if (pos < 0)
 		return B_BAD_VALUE;
 
-	if (*length > UINT32_MAX)
-		return B_BUFFER_OVERFLOW;
-
-	uint32 length32 = static_cast<uint32>(*length);
-
 	uint32 written = 0;
 	status_t ret = B_OK;
 
-	while (written < length32 && ret == B_OK) {
-		uint32 to_write = ((length32 - written) < IO_SIZE ? length32 - written : IO_SIZE);
+	while (written < *length && ret == B_OK) {
+		uint32 to_write = static_cast<uint32>((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
 		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)buffer + written, &to_write);
 		written += to_write;
 	}
