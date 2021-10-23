@@ -88,7 +88,8 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 		return B_BAD_VALUE;
 
 	status_t ret;
-	uint32 to_read, read = 0;
+	uint32 to_read;
+	size_t read = 0;
 
 	do {
 		to_read = static_cast<uint32>((*length - read) < IO_SIZE ? *length - read : IO_SIZE);
@@ -107,7 +108,7 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	if (pos < 0)
 		return B_BAD_VALUE;
 
-	uint32 written = 0;
+	size_t written = 0;
 	status_t ret = B_OK;
 
 	while (written < *length && ret == B_OK) {
