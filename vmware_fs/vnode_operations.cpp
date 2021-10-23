@@ -188,9 +188,9 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	vmw_attributes attributes;
 
 	attributes.perms = 0;
-	attributes.perms |= ((stat->st_mode & S_IRUSR) == S_IRUSR ? MSK_READ : 0);
-	attributes.perms |= ((stat->st_mode & S_IWUSR) == S_IWUSR ? MSK_WRITE : 0);
-	attributes.perms |= ((stat->st_mode & S_IXUSR) == S_IXUSR ? MSK_EXEC : 0);
+	attributes.perms |= static_cast<uint8>((stat->st_mode & S_IRUSR) == S_IRUSR ? MSK_READ : 0);
+	attributes.perms |= static_cast<uint8>((stat->st_mode & S_IWUSR) == S_IWUSR ? MSK_WRITE : 0);
+	attributes.perms |= static_cast<uint8>((stat->st_mode & S_IXUSR) == S_IXUSR ? MSK_EXEC : 0);
 
 	attributes.size = stat->st_size;
 

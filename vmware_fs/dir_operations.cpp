@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 
 #include "vmwfs.h"
@@ -19,7 +20,7 @@ vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perm
 	if (length < 0)
 		return B_BUFFER_OVERFLOW;
 
-	status_t ret = shared_folders->CreateDir(path_buffer, perms >> VMWFS_PERMS_MODE_SHIFT);
+	status_t ret = shared_folders->CreateDir(path_buffer, (perms & S_IRWXU) >> VMWFS_PERMS_MODE_SHIFT);
 
 	return ret;
 }
@@ -107,7 +108,7 @@ vmwfs_read_dir(fs_volume* volume, fs_vnode* vnode, void* _cookie, struct dirent*
 
 	buffer->d_dev = device_id;
 	buffer->d_ino = child_node->GetInode();
-	buffer->d_reclen = sizeof(struct dirent) + strlen(buffer->d_name);
+	buffer->d_reclen = static_cast<ushort>(sizeof(struct dirent) + strlen(buffer->d_name));
 
 	*_num = 1;
 

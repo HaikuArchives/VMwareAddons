@@ -44,7 +44,7 @@
 #define VMW_BACK_MOUSE_REQ_ABSOLUTE	0x53424152
 
 
-#define HIGH_BITS(x) ((x) >> 16)
+#define HIGH_BITS(x) (((x) >> 16) & 0xFFFF)
 #define LOW_BITS(x) ((x) & 0xFFFF)
 #define TO_HIGH(x) ((x) << 16)
 

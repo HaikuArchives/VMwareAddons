@@ -112,7 +112,7 @@ SYMBOLS = TRUE
 DEBUGGER =
 
 #	specify additional compiler flags for all files
-COMPILER_FLAGS =
+COMPILER_FLAGS = -Werror -Wall -Wconversion
 
 #	specify additional linker flags
 LINKER_FLAGS = 
