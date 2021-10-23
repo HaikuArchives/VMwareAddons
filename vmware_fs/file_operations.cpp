@@ -97,7 +97,7 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 		read += to_read;
 	} while(to_read != 0 && read < *length && ret == B_OK); // to_read == 0 means EOF
 
-	*length = static_cast<size_t>(read);
+	*length = read;
 
 	return ret;
 }
@@ -117,7 +117,7 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 		written += to_write;
 	}
 
-	*length = static_cast<size_t>(written);
+	*length = written;
 
 	return ret;
 }
