@@ -20,7 +20,11 @@ vmwfs_create_dir(fs_volume* volume, fs_vnode* parent, const char* name, int perm
 	if (length < 0)
 		return B_BUFFER_OVERFLOW;
 
-	status_t ret = shared_folders->CreateDir(path_buffer, (perms & S_IRWXU) >> VMWFS_PERMS_MODE_SHIFT);
+	// Haiku passes permissions as a 32-bit value, but the VMWare RPC v1 calls we use
+	// accept permissions mode as `uint8` (expecting only the user bits of the original permissions value)
+	uint8 vmwfs_perms_mode = (perms & S_IRWXU) >> VMWFS_PERMS_MODE_SHIFT;
+
+	status_t ret = shared_folders->CreateDir(path_buffer, vmwfs_perms_mode);
 
 	return ret;
 }
