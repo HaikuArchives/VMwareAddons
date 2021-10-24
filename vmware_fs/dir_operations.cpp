@@ -4,7 +4,7 @@
 
 #include "vmwfs.h"
 
-#define VMWFS_PERMS_MODE_SHIFT    6
+#define VMWFS_PERMS_MODE_SHIFT 6
 
 typedef struct {
 	file_handle handle;
