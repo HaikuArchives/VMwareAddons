@@ -16,10 +16,10 @@ typedef uint32 folder_handle;
 typedef struct vmw_attributes {
 	uint64	size;
 
-	uint64	c_time;
+	uint64	cr_time;
 	uint64	a_time;
 	uint64	m_time;
-	uint64	s_time; // inode change time
+	uint64	c_time; // inode change time
 
 	uint8	perms;
 } __attribute__((packed)) vmw_attributes;

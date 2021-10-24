@@ -161,10 +161,10 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	// the number of 100 nanosecond intervals that has passed since January 1, 1601, UTC.
 	// We need to convert them in number of seconds since 1/1/1970.
 
-	stat->st_crtime = TO_UNIX_TIME(attributes.c_time);
+	stat->st_crtime = TO_UNIX_TIME(attributes.cr_time);
 	stat->st_atime = TO_UNIX_TIME(attributes.a_time);
 	stat->st_mtime = TO_UNIX_TIME(attributes.m_time);
-	stat->st_ctime = TO_UNIX_TIME(attributes.s_time);
+	stat->st_ctime = TO_UNIX_TIME(attributes.c_time);
 
 	return B_NO_ERROR;
 }
@@ -200,10 +200,10 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 
 	attributes.size = stat->st_size;
 
-	attributes.c_time = TO_VMW_TIME(stat->st_crtime);
+	attributes.cr_time = TO_VMW_TIME(stat->st_crtime);
 	attributes.a_time = TO_VMW_TIME(stat->st_atime);
 	attributes.m_time = TO_VMW_TIME(stat->st_mtime);
-	attributes.s_time = TO_VMW_TIME(stat->st_ctime);
+	attributes.c_time = TO_VMW_TIME(stat->st_ctime);
 
 	uint32 mask = 0;
 	mask |= ((statMask & FS_WRITE_STAT_MODE) == FS_WRITE_STAT_MODE ? VMW_SET_PERMS : 0);
