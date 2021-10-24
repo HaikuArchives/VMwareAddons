@@ -64,7 +64,7 @@ RSRCS=
 #    link step will do it). This library contains only those support routines, one per object file.
 #    But if you are using anything from the rest of the library, such as IOStreams or vectors,
 #    then you'll still need pieces from libstdc++.a
-LIBS= gcc supc++-kernel
+LIBS= gcc-kernel supc++-kernel
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
