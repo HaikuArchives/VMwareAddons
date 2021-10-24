@@ -19,7 +19,7 @@ typedef struct vmw_attributes {
 	uint64	c_time;
 	uint64	a_time;
 	uint64	m_time;
-	uint64	s_time; // ?
+	uint64	s_time; // inode change time
 
 	uint8	perms;
 } __attribute__((packed)) vmw_attributes;
@@ -33,10 +33,10 @@ typedef struct vmw_attributes {
 #define CAN_EXEC(x) (((x).perms & MSK_EXEC) == MSK_EXEC)
 
 #define VMW_SET_SIZE	0x01
-#define VMW_SET_CTIME	0x02
+#define VMW_SET_CRTIME	0x02
 #define VMW_SET_ATIME	0x04
-#define VMW_SET_UTIME	0x08
-#define VMW_SET_STIME	0x10
+#define VMW_SET_MTIME	0x08
+#define VMW_SET_CTIME	0x10
 #define VMW_SET_PERMS	0x20
 
 class VMWSharedFolders {

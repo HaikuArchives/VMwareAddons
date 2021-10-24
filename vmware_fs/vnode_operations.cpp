@@ -5,6 +5,9 @@
 
 #include "vmwfs.h"
 
+#define TO_UNIX_TIME(x) ((x) / 10000000LL - 11644473600LL)
+#define TO_VMW_TIME(x) ((x) + 11644473600LL) * 10000000LL
+
 status_t
 vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 {
@@ -154,12 +157,14 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 		stat->st_blocks++;
 	stat->st_blksize = FAKE_BLOCK_SIZE;
 
-	// VMware dates are in thenth of microseconds since the 1/1/1901 (on 64 bits).
-	// We need to convert them in number of seconds since the 1/1/1970.
+	// VMware dates are in Windows NT time format, which is
+	// the number of 100 nanosecond intervals that has passed since January 1, 1601, UTC.
+	// We need to convert them in number of seconds since 1/1/1970.
 
-	stat->st_atime = (attributes.a_time / 10000000LL - 11644466400LL);
-	stat->st_mtime = (attributes.m_time / 10000000LL - 11644466400LL);
-	stat->st_ctime = stat->st_crtime = (attributes.c_time / 10000000LL - 11644466400LL);
+	stat->st_crtime = TO_UNIX_TIME(attributes.c_time);
+	stat->st_atime = TO_UNIX_TIME(attributes.a_time);
+	stat->st_mtime = TO_UNIX_TIME(attributes.m_time);
+	stat->st_ctime = TO_UNIX_TIME(attributes.s_time);
 
 	return B_NO_ERROR;
 }
@@ -173,7 +178,8 @@ enum write_stat_mask {
 	FS_WRITE_STAT_SIZE		= 0x0008,
 	FS_WRITE_STAT_ATIME		= 0x0010,
 	FS_WRITE_STAT_MTIME		= 0x0020,
-	FS_WRITE_STAT_CRTIME	= 0x0040
+	FS_WRITE_STAT_CRTIME	= 0x0040,
+	FS_WRITE_STAT_CTIME		= 0x0080
 };
 
 status_t
@@ -194,16 +200,18 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 
 	attributes.size = stat->st_size;
 
-	attributes.a_time = (stat->st_atime + 11644466400LL) * 10000000LL;
-	attributes.m_time = (stat->st_mtime + 11644466400LL) * 10000000LL;
-	attributes.c_time = (stat->st_ctime + 11644466400LL) * 10000000LL;
+	attributes.c_time = TO_VMW_TIME(stat->st_crtime);
+	attributes.a_time = TO_VMW_TIME(stat->st_atime);
+	attributes.m_time = TO_VMW_TIME(stat->st_mtime);
+	attributes.s_time = TO_VMW_TIME(stat->st_ctime);
 
 	uint32 mask = 0;
 	mask |= ((statMask & FS_WRITE_STAT_MODE) == FS_WRITE_STAT_MODE ? VMW_SET_PERMS : 0);
 	mask |= ((statMask & FS_WRITE_STAT_SIZE) == FS_WRITE_STAT_SIZE ? VMW_SET_SIZE : 0);
 	mask |= ((statMask & FS_WRITE_STAT_ATIME) == FS_WRITE_STAT_ATIME ? VMW_SET_ATIME : 0);
-	mask |= ((statMask & FS_WRITE_STAT_MTIME) == FS_WRITE_STAT_MTIME ? VMW_SET_UTIME : 0);
-	mask |= ((statMask & FS_WRITE_STAT_CRTIME) == FS_WRITE_STAT_CRTIME ? VMW_SET_CTIME : 0);
+	mask |= ((statMask & FS_WRITE_STAT_MTIME) == FS_WRITE_STAT_MTIME ? VMW_SET_MTIME : 0);
+	mask |= ((statMask & FS_WRITE_STAT_CRTIME) == FS_WRITE_STAT_CRTIME ? VMW_SET_CRTIME : 0);
+	mask |= ((statMask & FS_WRITE_STAT_CTIME) == FS_WRITE_STAT_CTIME ? VMW_SET_CTIME : 0);
 
 	status_t ret = shared_folders->SetAttributes(path_buffer, &attributes, mask);
 
