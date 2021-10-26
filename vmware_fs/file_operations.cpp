@@ -88,15 +88,16 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 		return B_BAD_VALUE;
 
 	status_t ret;
-	size_t to_read, red = 0;
+	uint32 to_read;
+	size_t read = 0;
 
 	do {
-		to_read = ((*length - red) < IO_SIZE ? *length - red : IO_SIZE);
-		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + red, (uint8*)buffer + red, &to_read);
-		red += to_read;
-	} while(to_read != 0 && red < *length && ret == B_OK); // to_read == 0 means EOF
+		to_read = static_cast<uint32>((*length - read) < IO_SIZE ? *length - read : IO_SIZE);
+		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + read, (uint8*)buffer + read, &to_read);
+		read += to_read;
+	} while(to_read != 0 && read < *length && ret == B_OK); // to_read == 0 means EOF
 
-	*length = red;
+	*length = read;
 
 	return ret;
 }
@@ -111,7 +112,7 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	status_t ret = B_OK;
 
 	while (written < *length && ret == B_OK) {
-		size_t to_write = ((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
+		uint32 to_write = static_cast<uint32>((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
 		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)buffer + written, &to_write);
 		written += to_write;
 	}
