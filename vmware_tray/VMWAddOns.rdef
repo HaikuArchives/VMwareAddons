@@ -3,11 +3,11 @@ resource app_signature "application/x-vnd.VinDuv.VMwareAddOns";
 resource app_version {
 	major		= 1,
 	middle		= 2,
-	minor		= 0,
+	minor		= 2,
 	variety		= B_APPV_FINAL,
 	internal	= 0,
 	short_info	= "VMware Add-Ons",
-	long_info	= "VMware Add-Ons 1.2.0 ©2009 Vincent Duvert"
+	long_info	= "VMware Add-Ons 1.2.2 ©2009 Vincent Duvert"
 };
 
 resource app_flags B_SINGLE_LAUNCH;
