@@ -7,7 +7,7 @@ VMW Add-ons are a set of tools to enhance interaction between Haiku, running in 
 
 **It currently provides**:
  - Clipboard sharing between Haiku and the host OS.
- - Mouse sharing: the mouse can seamlessly enter and quit the VM window.
+ - Mouse sharing: the mouse can seamlessly enter and leave the VM window.
  - Shared folders: easily share files between Haiku and the host OS.
  - Disk compacting: Starts the VMware "shrink" process, which reduce the size of "auto-expanding" virtual disks attached to the virtual machine. The free space on disks is cleaned up previously, in order to get better results.
  - Graphics driver for VMware: you can choose your preferred resolution using Screen preflet in Haiku.
