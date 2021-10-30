@@ -360,7 +360,7 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware)
 
 	AddSeparatorItem();
 
-	AddItem(new BMenuItem("About "APP_NAME B_UTF8_ELLIPSIS, new BMessage(B_ABOUT_REQUESTED)));
+	AddItem(new BMenuItem("About " APP_NAME B_UTF8_ELLIPSIS, new BMessage(B_ABOUT_REQUESTED)));
 	AddItem(new BMenuItem("Quit" B_UTF8_ELLIPSIS, new BMessage(REMOVE_FROM_DESKBAR)));
 
 	SetTargetForItems(tray);
