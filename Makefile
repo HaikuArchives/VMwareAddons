@@ -9,10 +9,13 @@ vmware_fs: vmware_fs/objects/vmware_fs
 vmware_mouse: vmware_mouse/objects/vmware_mouse
 	cp $< $@
 
-vmware_video_accelerant: vmware_tray/objects/vmware_video/accelerant
+vmware_video_accelerant: vmware_video/accelerant/objects/vmware.accelerant
 	cp $< "$@"
 
-vmware_video_kernel: vmware_tray/objects/vmware_video/kernel
+vmware_video_kernel: vmware_video/kernel/objects/vmware
+	cp $< "$@"
+	
+vmware_tray: vmware_tray/objects/vmware_tray
 	cp $< "$@"
 
 
