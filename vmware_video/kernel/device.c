@@ -332,10 +332,10 @@ ControlHook(void *dev, uint32 msg, void *buf, size_t len)
 		case VMWARE_SET_PALETTE:
 		{
 			uint8 colors[3 * 256];
-			if (user_memcpy(colors, buf, sizeof(colors)) < B_OK)
-				return B_BAD_ADDRESS;
 			uint8 *color = colors;
 			uint32 i;
+			if (user_memcpy(colors, buf, sizeof(colors)) < B_OK)
+				return B_BAD_ADDRESS;
 			if (ReadReg(SVGA_REG_PSEUDOCOLOR) != 1)
 				return B_ERROR;
 
