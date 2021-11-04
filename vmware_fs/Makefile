@@ -55,7 +55,10 @@ RSRCS=
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
 #  ---
+#
 #  Haiku drivers cannot depend on libstdc++.a, we use libsupc++-kernel.a instead.
+#  For gcc2 we link just libgcc.a, as there's no libsupc++-kernel.a
+#
 #  As stated by https://gcc.gnu.org/onlinedocs/libstdc++/faq.html#faq.what_is_libsupcxx
 #    If the only functions from libstdc++.a which you need are language support functions
 #    (those listed in clause 18 of the standard, e.g., new and delete),
@@ -64,7 +67,7 @@ RSRCS=
 #    link step will do it). This library contains only those support routines, one per object file.
 #    But if you are using anything from the rest of the library, such as IOStreams or vectors,
 #    then you'll still need pieces from libstdc++.a
-LIBS= gcc-kernel supc++-kernel
+LIBS= $(if $(filter $(CC_VER), 2), gcc, gcc-kernel supc++-kernel)
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -112,7 +115,7 @@ SYMBOLS = TRUE
 DEBUGGER =
 
 #	specify additional compiler flags for all files
-COMPILER_FLAGS = -Werror -Wall -Wconversion
+COMPILER_FLAGS = -Werror -Wall -Wconversion -Wno-multichar
 
 #	specify additional linker flags
 LINKER_FLAGS = 

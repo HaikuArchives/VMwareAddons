@@ -1,6 +1,6 @@
 CC=gcc
 CXX=g++
-CFLAGS=-I. -g -W -Wall -Wno-multichar -ansi -pedantic -Werror
+CFLAGS=-I. -g -W -Wall -Wno-multichar -ansi -pedantic
 LDFLAGS=-lbe 
 
 all: run_backdoor
