@@ -125,7 +125,7 @@ MOVE_CURSOR(uint16 x, uint16 y)
 void
 SHOW_CURSOR(bool isVisible)
 {
-	TRACE("SHOW_CURSOR (%d)\n", isVisible);
+	// TRACE("SHOW_CURSOR (%d)\n", isVisible);
 
 	ioctl(gFd, VMWARE_SHOW_CURSOR, &isVisible, sizeof(bool));
 }
