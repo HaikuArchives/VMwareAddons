@@ -48,8 +48,10 @@ install: build
 	make -C enhanced_backdoor install
 	make -C vmware_tray install
 	make -C vmware_video/accelerant install
+	# if we overwrite an in-use driver things get crashy, so delete then reinstall it
+	rm -f /boot/home/config/non-packaged/add-ons/kernel/drivers/dev/graphics/vmware
 	make -C vmware_video/kernel install
 	mkdir -p "$(HOME)/config/settings/deskbar/menu/Desktop applets"
-	ln -sf /boot/system/non-packaged/bin/vmware_tray "$(HOME)/config/settings/deskbar/menu/Desktop applets/VMware add-ons"
+	ln -sf /boot/home/config/non-packaged/bin/vmware_tray "$(HOME)/config/settings/deskbar/menu/Desktop applets/VMware add-ons"
 
 .PHONY: build release clean
