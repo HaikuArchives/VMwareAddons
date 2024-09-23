@@ -42,5 +42,14 @@ clean:
 	make -C vmware_video/accelerant clean
 	make -C vmware_video/kernel clean
 
+install: build
+	make -C vmware_fs install
+	make -C vmware_mouse install
+	make -C enhanced_backdoor install
+	make -C vmware_tray install
+	make -C vmware_video/accelerant install
+	make -C vmware_video/kernel install
+	mkdir -p "$(HOME)/config/settings/deskbar/menu/Desktop applets"
+	ln -sf /boot/system/non-packaged/bin/vmware_tray "$(HOME)/config/settings/deskbar/menu/Desktop applets/VMware add-ons"
 
 .PHONY: build release clean
