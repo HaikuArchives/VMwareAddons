@@ -120,7 +120,7 @@ COMPILER_FLAGS = -Werror -Wall -Wconversion -Wno-multichar
 #	specify additional linker flags
 LINKER_FLAGS = 
 
-INSTALL_DIR = /boot/home/config/non-packaged/add-ons/kernel/file_systems
+INSTALL_DIR = /boot/system/non-packaged/add-ons/kernel/file_systems
 
 ## include the makefile-engine
 DEVEL_DIRECTORY := \

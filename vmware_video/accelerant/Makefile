@@ -114,7 +114,7 @@ COMPILER_FLAGS = -Werror
 #	specify additional linker flags
 LINKER_FLAGS = 
 
-INSTALL_DIR = /boot/home/config/non-packaged/add-ons/accelerants
+INSTALL_DIR = /boot/system/non-packaged/add-ons/accelerants
 
 ## include the makefile-engine
 DEVEL_DIRECTORY := \
