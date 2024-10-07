@@ -105,7 +105,7 @@ COMPILER_FLAGS = -fPIC
 #	specify additional linker flags
 LINKER_FLAGS = 
 
-INSTALL_DIR = /boot/home/config/non-packaged/add-ons/kernel/drivers/bin
+INSTALL_DIR = /boot/system/non-packaged/add-ons/kernel/drivers/dev/graphics
 
 ## include the makefile-engine
 DEVEL_DIRECTORY := \

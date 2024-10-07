@@ -43,12 +43,20 @@ clean:
 	make -C vmware_video/kernel clean
 
 install: build
+	# if we overwrite an in-use driver things get crashy, so delete those first
+	rm -f /boot/system/non-packaged/add-ons/kernel/drivers/dev/graphics/vmware
+	rm -f /boot/system/non-packaged/add-ons/accelerants/vmware.accelerant
+	rm -f /boot/system/non-packaged/add-ons/input_server/filters/vmware_mouse
+	rm -f /boot/system/non-packaged/add-ons/kernel/file_systems/vmwfs
+
+	# now reinstall everything
 	make -C vmware_fs install
 	make -C vmware_mouse install
 	make -C enhanced_backdoor install
 	make -C vmware_tray install
 	make -C vmware_video/accelerant install
 	make -C vmware_video/kernel install
+
 	mkdir -p "$(HOME)/config/settings/deskbar/menu/Desktop applets"
 	ln -sf /boot/system/non-packaged/bin/vmware_tray "$(HOME)/config/settings/deskbar/menu/Desktop applets/VMware add-ons"
 
