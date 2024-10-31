@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 
+// This got renamed on hrev58151.
+#ifndef B_MTR_WC
+	#define B_MTR_WC B_WRITE_COMBINING_MEMORY
+#endif
 
 #define get_pci(o, s) (*gPciBus->read_pci_config)(pcii->bus, pcii->device, pcii->function, (o), (s))
 #define set_pci(o, s, v) (*gPciBus->write_pci_config)(pcii->bus, pcii->device, pcii->function, (o), (s), (v))
