@@ -7,6 +7,7 @@
  *		Michael Pfeiffer <laplace@users.sourceforge.net>
  */
 
+
 #include "driver.h"
 
 #include <KernelExport.h>
