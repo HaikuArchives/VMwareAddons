@@ -13,11 +13,18 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 {
 	VMWNode* dir_node = (VMWNode*)dir->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = dir_node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	status_t ret = shared_folders->GetAttributes(path_buffer);
+	free(path_buffer);
 	if (ret != B_OK)
 		return ret;
 
@@ -69,11 +76,18 @@ vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 {
 	VMWNode* node = (VMWNode*)dir->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	status_t ret = shared_folders->DeleteFile(path_buffer);
+	free(path_buffer);
 
 	return ret;
 }
@@ -84,16 +98,32 @@ vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnod
 	VMWNode* src_dir = (VMWNode*)fromDir->private_node;
 	VMWNode* dst_dir = (VMWNode*)toDir->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	char* path_buffer_dest = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL || path_buffer_dest == NULL) {
+		free(path_buffer);
+		free(path_buffer_dest);
+		return B_NO_MEMORY;
+	}
+
 	ssize_t length = src_dir->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, fromName);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
+		free(path_buffer_dest);
 		return B_BUFFER_OVERFLOW;
+	}
 
 
 	length = dst_dir->CopyPathTo(path_buffer_dest, B_PATH_NAME_LENGTH, toName);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
+		free(path_buffer_dest);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	status_t ret = shared_folders->Move(path_buffer, path_buffer_dest);
+	free(path_buffer);
+	free(path_buffer_dest);
 
 	return ret;
 }
@@ -103,12 +133,19 @@ vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 {
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	vmw_attributes attributes;
 	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes);
+	free(path_buffer);
 
 	if (ret != B_OK)
 		return ret;
@@ -126,13 +163,20 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 {
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	vmw_attributes attributes;
 	bool is_dir;
 	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes, &is_dir);
+	free(path_buffer);
 
 	if (ret != B_OK)
 		return ret;
@@ -187,9 +231,15 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 {
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	vmw_attributes attributes;
 
@@ -214,6 +264,7 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	mask |= ((statMask & FS_WRITE_STAT_CTIME) == FS_WRITE_STAT_CTIME ? VMW_SET_CTIME : 0);
 
 	status_t ret = shared_folders->SetAttributes(path_buffer, &attributes, mask);
+	free(path_buffer);
 
 	return ret;
 }

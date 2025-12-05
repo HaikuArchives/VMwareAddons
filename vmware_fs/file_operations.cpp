@@ -7,15 +7,24 @@ vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, i
 {
 	VMWNode* dir_node = (VMWNode*)dir->private_node;
 
-	ssize_t length = dir_node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
-	if (length < 0)
-		return B_BUFFER_OVERFLOW;
-
-	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
-	if (cookie == NULL)
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
 		return B_NO_MEMORY;
 
+	ssize_t length = dir_node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
+	if (length < 0) {
+		free(path_buffer);
+		return B_BUFFER_OVERFLOW;
+	}
+
+	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
+	if (cookie == NULL) {
+		free(path_buffer);
+		return B_NO_MEMORY;
+	}
+
 	status_t ret = shared_folders->OpenFile(path_buffer, openMode | O_CREAT, cookie);
+	free(path_buffer);
 
 	if (ret != B_OK) {
 		free(cookie);
@@ -39,13 +48,21 @@ vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 {
 	VMWNode* node = (VMWNode*)vnode->private_node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	file_handle* cookie = (file_handle*)malloc(sizeof(file_handle));
-	if (cookie == NULL)
+	if (cookie == NULL) {
+		free(path_buffer);
 		return B_NO_MEMORY;
+	}
 
 	*_cookie = cookie;
 
@@ -53,10 +70,12 @@ vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 		// We allow opening the root node as a file because it allows the volume
 		// to be shown in Tracker.
 		*cookie = (file_handle)(-1);
+		free(path_buffer);
 		return B_OK;
 	}
 
 	status_t ret = shared_folders->OpenFile(path_buffer, openMode, cookie);
+	free(path_buffer);
 
 	if (ret != B_OK) {
 		free(cookie);
@@ -91,11 +110,25 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 	uint32 to_read;
 	size_t read = 0;
 
+	char* local_buffer = (char*)malloc(IO_SIZE);
+	if (local_buffer == NULL)
+		return B_NO_MEMORY;
+
 	do {
 		to_read = static_cast<uint32>((*length - read) < IO_SIZE ? *length - read : IO_SIZE);
-		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + read, (uint8*)buffer + read, &to_read);
+		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + read, (uint8*)local_buffer, &to_read);
+		
+		if (ret == B_OK && to_read > 0) {
+			if (user_memcpy((uint8*)buffer + read, local_buffer, to_read) != B_OK) {
+				free(local_buffer);
+				return B_BAD_ADDRESS;
+			}
+		}
+		
 		read += to_read;
 	} while(to_read != 0 && read < *length && ret == B_OK); // to_read == 0 means EOF
+
+	free(local_buffer);
 
 	*length = read;
 
@@ -111,11 +144,23 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	size_t written = 0;
 	status_t ret = B_OK;
 
+	char* local_buffer = (char*)malloc(IO_SIZE);
+	if (local_buffer == NULL)
+		return B_NO_MEMORY;
+
 	while (written < *length && ret == B_OK) {
 		uint32 to_write = static_cast<uint32>((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
-		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)buffer + written, &to_write);
+		
+		if (user_memcpy(local_buffer, (const uint8*)buffer + written, to_write) != B_OK) {
+			free(local_buffer);
+			return B_BAD_ADDRESS;
+		}
+
+		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)local_buffer, &to_write);
 		written += to_write;
 	}
+
+	free(local_buffer);
 
 	*length = written;
 

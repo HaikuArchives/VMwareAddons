@@ -69,6 +69,7 @@ private:
 	status_t		init_check;
 	char*			rpc_buffer;
 	size_t			rpc_buffer_size;
+	sem_id			fLock;
 };
 
 #endif
