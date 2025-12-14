@@ -33,7 +33,9 @@ virtual	status_t			InitCheck();
 virtual	filter_result		Filter(BMessage *msg, BList *outList);
 
 private:
-		VMWareSettingsWatcher*	settings_watcher;
+	VMWareSettingsWatcher*	settings_watcher;
+		int32				fLastX;
+		int32				fLastY;
 
 		void				_ExecuteCommand(union packet_u &packet);
 

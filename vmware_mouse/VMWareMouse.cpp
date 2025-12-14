@@ -32,7 +32,9 @@ VMWBackdoor backdoor;
 
 VMWareMouseFilter::VMWareMouseFilter()
 	:
-	BInputServerFilter()
+	BInputServerFilter(),
+	fLastX(-1),
+	fLastY(-1)
 {
 	node_ref nref;
 	settings = new VMWAddOnsSettings(&nref);
@@ -89,11 +91,26 @@ VMWareMouseFilter::Filter(BMessage *message, BList *outList)
 
 			if (numWords == 0) {
 				// no actual data availabe, spurious event happens on fast move
-				return B_SKIP_MESSAGE;
+				if (message->what == B_MOUSE_MOVED)
+					return B_SKIP_MESSAGE;
+				
+				// For clicks we must not drop the message, even if we don't have
+				// new data from VMWare.
+				if (fLastX != -1 && fLastY != -1) {
+					int32 x = fLastX;
+					int32 y = fLastY;
+					_ScalePosition(x, y);
+					TRACE("restoring position to %ld, %ld\n", x, y);
+					message->RemoveName("where");
+					message->AddPoint("where", BPoint(x, y));
+				}
+				break;
 			}
 
 			int32 x, y;
 			_GetPosition(x, y);
+			fLastX = x;
+			fLastY = y;
 			_ScalePosition(x, y);
 
 			if (x < 0 || y < 0) {
