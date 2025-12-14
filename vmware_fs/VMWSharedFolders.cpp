@@ -143,7 +143,7 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 }
 
 status_t
-VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer, uint32* read_length)
+VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer, uint32* read_length, bool buffer_is_user)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -165,6 +165,7 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 	SET_32(pos, VMW_CMD_READ_FILE);
 	SET_32(pos, handle);
 	SET_64(pos, offset);
+	uint32 max_length = *read_length;
 	SET_32(pos, *read_length);
 
 	ASSERT(pos == length);
@@ -188,16 +189,33 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 		return ret;
 	}
 
-	*read_length = *(uint32*)(rpc_buffer + 10);
+	uint32 returned_length = *(uint32*)(rpc_buffer + 10);
+	if (returned_length > max_length) {
+		release_sem(fLock);
+		return B_BUFFER_OVERFLOW;
+	}
 
-	memcpy(read_buffer, rpc_buffer + 14, *read_length);
+	*read_length = returned_length;
+
+	if (buffer_is_user) {
+		if (user_memcpy(read_buffer, rpc_buffer + 14, *read_length) != B_OK) {
+			release_sem(fLock);
+			return B_BAD_ADDRESS;
+		}
+	} else {
+		if (read_buffer == NULL) {
+			release_sem(fLock);
+			return B_BAD_VALUE;
+		}
+		memcpy(read_buffer, rpc_buffer + 14, *read_length);
+	}
 
 	release_sem(fLock);
 	return ret;
 }
 
 status_t
-VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write_buffer, uint32* write_length)
+VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write_buffer, uint32* write_length, bool buffer_is_user)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -224,7 +242,13 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	SET_8(pos, 0);
 	SET_64(pos, offset);
 	SET_32(pos, *write_length);
-	memcpy(rpc_buffer + pos, write_buffer, *write_length);
+	if (buffer_is_user) {
+		if (user_memcpy(rpc_buffer + pos, write_buffer, *write_length) != B_OK) {
+			release_sem(fLock);
+			return B_BAD_ADDRESS;
+		}
+	} else
+		memcpy(rpc_buffer + pos, write_buffer, *write_length);
 	pos += *write_length;
 
 	ASSERT(pos == length);
