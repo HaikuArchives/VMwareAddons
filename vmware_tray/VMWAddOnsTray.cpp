@@ -160,6 +160,13 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 		}
 		break;
 
+		case TIME_SYNC_SHARING:
+		{
+			bool time_sync_enabled = settings.GetBool("time_sync_enabled", true);
+			settings.SetBool("time_sync_enabled", !time_sync_enabled);
+		}
+		break;
+
 		case REMOVE_FROM_DESKBAR:
 			RemoveMyself(true);
 		break;
@@ -348,6 +355,10 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware)
 
 		menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
 		menu_item->SetMarked(settings.GetBool("clip_enabled", true));
+		AddItem(menu_item);
+
+		menu_item = new BMenuItem("Enable time synchronization", new BMessage(TIME_SYNC_SHARING));
+		menu_item->SetMarked(settings.GetBool("time_sync_enabled", true));
 		AddItem(menu_item);
 
 		if (!tray->cleanup_in_process)
