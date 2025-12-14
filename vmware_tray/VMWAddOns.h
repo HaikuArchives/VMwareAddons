@@ -20,5 +20,6 @@
 #define CLIPBOARD_POLL 'clPo'
 #define CLOCK_POLL 'ckPo'
 #define SHRINK_DISKS 'shDk'
+#define TIME_SYNC_SHARING 'time'
 
 #endif

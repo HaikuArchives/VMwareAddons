@@ -1,0 +1,3 @@
+service x-vnd.Haiku-VMWareTime {
+	launch /boot/system/non-packaged/bin/vmware_time
+}

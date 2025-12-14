@@ -21,6 +21,7 @@ public:
 	status_t	GetHostClipboard(char** text, size_t *text_length);
 	status_t	SetHostClipboard(char* text, size_t length);
 	int32		GetHostClock();
+	status_t	GetHostTime(time_t *time);
 };
 
 #endif

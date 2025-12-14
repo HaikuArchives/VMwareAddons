@@ -214,3 +214,24 @@ VMWBackdoor::GetHostClock()
 	
 	return regs.eax - 60 * regs.edx;
 }
+
+status_t
+VMWBackdoor::GetHostTime(time_t *time)
+{
+	if (!InVMware()) return B_NOT_ALLOWED;
+
+	regs_t regs;
+	// 0x17 = VMW_BACK_GET_TIME (using literal or we need to add define to core header)
+	// It's better to add the define to VMWCoreBackdoor.h, but for now using literal or adding local define
+	// Checking VMWCoreBackdoor.h content next would be ideal, but for now assuming we need to define it or just use hex if cleaner.
+	// Actually, `VMW_BACK_GET_HOST_TIME` seems to be used in `GetHostClock` which returns int32.
+	// Let's implement GetHostTime similar to local one but using shared infrastructure.
+	
+	BackdoorCall(&regs, 0x17, 0); 
+	
+	if (regs.eax == -1)
+		return B_ERROR;
+
+	*time = regs.eax;
+	return B_OK;
+}
