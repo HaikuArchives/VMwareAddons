@@ -8,8 +8,6 @@ VMWNode* root_node;
 
 int32 mount_count = 0;
 
-char* path_buffer;
-char* path_buffer_dest;
 dev_t device_id;
 
 status_t
@@ -29,13 +27,9 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 	}
 
 	root_node = new VMWNode("", NULL);
-	path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	path_buffer_dest = (char*)malloc(B_PATH_NAME_LENGTH);
 
-	if (root_node == NULL || path_buffer == NULL || path_buffer_dest == NULL) {
+	if (root_node == NULL) {
 		delete root_node;
-		free(path_buffer);
-		free(path_buffer_dest);
 		atomic_add(&mount_count, -1);
 		return B_NO_MEMORY;
 	}
@@ -59,8 +53,6 @@ vmwfs_unmount(fs_volume* volume)
 {
 	delete root_node;
 	delete shared_folders;
-	free(path_buffer);
-	free(path_buffer_dest);
 
 	atomic_add(&mount_count, -1);
 
@@ -105,13 +97,22 @@ vmwfs_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32
 
 	vnode->private_node = node;
 
+	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (path_buffer == NULL)
+		return B_NO_MEMORY;
+
 	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
-	if (length < 0)
+	if (length < 0) {
+		free(path_buffer);
 		return B_BUFFER_OVERFLOW;
+	}
 
 	vmw_attributes attributes;
 	bool is_dir;
 	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes, &is_dir);
+	
+	free(path_buffer);
+	
 	if (ret != B_OK)
 		return ret;
 

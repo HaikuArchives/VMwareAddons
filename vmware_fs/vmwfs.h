@@ -17,8 +17,6 @@ extern VMWSharedFolders* shared_folders;
 extern fs_volume_ops volume_ops;
 extern fs_vnode_ops vnode_ops;
 
-extern char* path_buffer;
-extern char* path_buffer_dest;
 extern dev_t device_id;
 
 #endif
