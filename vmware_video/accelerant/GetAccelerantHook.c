@@ -48,7 +48,7 @@ get_accelerant_hook(uint32 feature, void *data)
 		HOOK(SET_DPMS_MODE);
 
 		/* Cursor managment (Cursor.c) */
-		HOOK_IF(SET_CURSOR_SHAPE, SVGA_CAP_CURSOR_BYPASS);
+		ZERO(SET_CURSOR_SHAPE);	/* breaks mouse sharing for some reason. */
 		HOOK_IF(MOVE_CURSOR, SVGA_CAP_CURSOR_BYPASS);
 		HOOK_IF(SHOW_CURSOR, SVGA_CAP_CURSOR_BYPASS);
 
