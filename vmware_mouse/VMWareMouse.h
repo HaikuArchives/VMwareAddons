@@ -35,13 +35,6 @@ virtual	filter_result		Filter(BMessage *msg, BList *outList);
 private:
 		VMWareSettingsWatcher*	settings_watcher;
 
-		void				_ExecuteCommand(union packet_u &packet);
-
-		bool				_Enable();
-		void				_Disable();
-
-		void				_GetStatus(uint16 *status, uint16 *numWords);
-		void				_GetPosition(int32 &x, int32 &y);
 		void				_ScalePosition(int32 &x, int32 &y);
 };
 
