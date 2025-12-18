@@ -14,6 +14,8 @@
 // http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
 #define VMW_BACK_PORT				0x00005658UL
 
+#define VMWARE_ERROR				0xFFFF
+
 #define VMW_BACK_GET_VERSION		0x0A
 
 #define VMW_BACK_RPC_MAGIC			0x49435052UL

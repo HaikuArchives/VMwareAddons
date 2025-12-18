@@ -68,28 +68,38 @@ VMWBackdoor::DisableMouseSharing()
 status_t
 VMWBackdoor::GetCursorPosition(int32& x, int32& y)
 {
-	if (!InVMware()) return B_NOT_ALLOWED;
-	
-	regs_t regs;
-	
-	// Get status
-	BackdoorCall(&regs, VMW_BACK_MOUSE_STATUS, 0);
-	int16 status = HIGH_BITS(regs.eax);
-	int16 to_read = LOW_BITS(regs.eax);
-	if (status == -1)
+	if (!InVMware())
+		return B_NOT_ALLOWED;
+
+	uint16 status;
+	uint16 to_read;
+
+	GetCursorStatus(status, to_read);
+
+	if (status == VMWARE_ERROR)
 		return B_ERROR;
-	
+
 	if (to_read == 0)
 		return B_INTERRUPTED;
-	
-	
+
+	regs_t regs;
 	BackdoorCall(&regs, VMW_BACK_MOUSE_DATA, 4);
 	x = regs.esi;
 	y = regs.ecx;
-	
+
 	return B_OK;
-	
 }
+
+
+void
+VMWBackdoor::GetCursorStatus(uint16& status, uint16& to_read)
+{
+	regs_t regs;
+	BackdoorCall(&regs, VMW_BACK_MOUSE_STATUS, 0);
+	status = HIGH_BITS(regs.eax);
+	to_read = LOW_BITS(regs.eax);
+}
+
 
 status_t
 VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
