@@ -24,13 +24,13 @@ VMWAddOnsSettings settings;
 #define CLIP_POLL_DELAY 1000000
 #define CLOCK_POLL_DELAY 30000000
 
-extern "C" _EXPORT BView* instantiate_deskbar_item(void)
+extern "C" _EXPORT BView* instantiate_deskbar_item(float /*maxWidth*/, float maxHeight)
 {
-	return (new VMWAddOnsTray);
+	return (new VMWAddOnsTray(maxHeight));
 }
 
-VMWAddOnsTray::VMWAddOnsTray()
-	: BView(BRect(0, 0, B_MINI_ICON, B_MINI_ICON),
+VMWAddOnsTray::VMWAddOnsTray(float maxHeight)
+	: BView(BRect(0, 0, maxHeight - 1, maxHeight - 1),
 		TRAY_NAME, B_FOLLOW_LEFT | B_FOLLOW_TOP, B_WILL_DRAW)
 {
 		init();
@@ -82,15 +82,6 @@ VMWAddOnsTray::~VMWAddOnsTray()
 	delete clock_sync;
 }
 
-void
-VMWAddOnsTray::GetPreferredSize(float *w, float *h)
-{
-	if (w == NULL)
-		return;
-	*w = B_MINI_ICON;
-	*h = B_MINI_ICON;
-}
-
 status_t
 VMWAddOnsTray::Archive(BMessage *data, bool deep = true) const
 {
@@ -120,14 +111,14 @@ VMWAddOnsTray::Draw(BRect /*update_rect*/) {
 
 	if (settings.GetBool("mouse_enabled", true)) {
 		if (settings.GetBool("clip_enabled", true))
-			DrawBitmap(icon_all);
+			DrawBitmap(icon_all, icon_all->Bounds(), tray_bounds);
 		else
-			DrawBitmap(icon_mouse);
+			DrawBitmap(icon_mouse, icon_mouse->Bounds(), tray_bounds);
 	} else {
 		if (settings.GetBool("clip_enabled", true))
-			DrawBitmap(icon_clipboard);
+			DrawBitmap(icon_clipboard, icon_clipboard->Bounds(), tray_bounds);
 		else
-			DrawBitmap(icon_none);
+			DrawBitmap(icon_none, icon_none->Bounds(), tray_bounds);
 	}
 }
 

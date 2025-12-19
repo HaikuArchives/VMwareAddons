@@ -18,10 +18,9 @@
 
 class VMWAddOnsTray: public BView {
 public:
-							VMWAddOnsTray();
+							VMWAddOnsTray(float maxHeight);
 							VMWAddOnsTray(BMessage* mdArchive);
 	virtual					~VMWAddOnsTray();
-	virtual void			GetPreferredSize(float *w, float* h);
 	virtual void			Draw(BRect /*update_rect*/);
 	virtual void			MessageReceived(BMessage* message);
 	virtual void 			AttachedToWindow();
