@@ -11,7 +11,7 @@
 #include <Message.h>
 
 #define VMW_BACK_MAGIC				0x564D5868UL
-// http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
+// https://web.archive.org/web/20100610223425/http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
 #define VMW_BACK_PORT				0x00005658UL
 
 #define VMW_BACK_GET_VERSION		0x0A

@@ -92,31 +92,35 @@ VMWBackdoor::GetCursorPosition(int32& x, int32& y)
 }
 
 status_t
-VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
+VMWBackdoor::GetHostClipboard(char** text, size_t* text_length)
 {
-	if (!InVMware()) return B_NOT_ALLOWED;
+	if (!InVMware())
+		return B_NOT_ALLOWED;
 
-	char *buffer = NULL;
-	if (text == NULL) {
-		return B_OK;
-	}
+	if (text == NULL)
+		return B_ERROR;
 
+	char* buffer = NULL;
 	struct vm_backdoor frame;
-	uint32_t total, left;
 
 	bzero(&frame, sizeof(frame));
 
 	frame.eax.word      = VMW_BACK_MAGIC;
 	frame.ecx.part.low  = VMW_BACK_GET_CLIP_LENGTH;
-	frame.ecx.part.high = 0xffff;
+	frame.ecx.part.high = 0;
 	frame.edx.part.low  = VMW_BACK_RPC_PORT;
 	frame.edx.part.high = 0;
 
 	BACKDOOR_OP("inl %%dx, %%eax;", &frame);
 
+	uint32_t total, left;
 	total = left = frame.eax.word;
 
-	if (total == 0 || total > 0xffff) {
+	// Max length is 65436, text will be truncated to that size.
+	// If we get 0xFFFFFFFF it means that either:
+	// the cliboard data is not text, or it was already transfered once.
+	if (total == 0 || total > 65436) {
+		// syslog(LOG_INFO, "VMWBackdoor: invalid GET_CLIP_LENGTH: %u\n", total);
 		return B_ERROR;
 	}
 
@@ -128,7 +132,7 @@ VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
 
 		frame.eax.word      = VMW_BACK_MAGIC;
 		frame.ecx.part.low  = VMW_BACK_GET_CLIP_DATA;
-		frame.ecx.part.high = 0xffff;
+		frame.ecx.part.high = 0;
 		frame.edx.part.low  = VMW_BACK_RPC_PORT;
 		frame.edx.part.high = 0;
 
@@ -152,40 +156,39 @@ VMWBackdoor::GetHostClipboard(char** text, size_t *text_length)
 status_t
 VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 {
-	if (!InVMware()) return B_NOT_ALLOWED;
+	if (!InVMware())
+		return B_NOT_ALLOWED;
 
-	if(text==NULL || text_length==0)
+	if (text == NULL || text_length == 0)
 		return B_ERROR;
 
-	text[text_length]='\0';
-	
-	struct vm_backdoor frame;
-	uint32_t total, left;
+	text[text_length] = '\0';
 
+	struct vm_backdoor frame;
 	bzero(&frame, sizeof(frame));
+
+	uint32_t total, left;
+	total = left = strlen(text);
 
 	frame.eax.word      = VMW_BACK_MAGIC;
 	frame.ecx.part.low  = VMW_BACK_SET_CLIP_LENGTH;
-	frame.ecx.part.high = 0xffff;
+	frame.ecx.part.high = 0;
 	frame.edx.part.low  = VMW_BACK_RPC_PORT;
 	frame.edx.part.high = 0;
-	frame.ebx.word      = (uint32_t)strlen(text);
+	frame.ebx.word      = total;
 
 	BACKDOOR_OP("inl %%dx, %%eax;", &frame);
-
-	total = left = strlen(text);
 
 	for (;;) {
 		bzero(&frame, sizeof(frame));
 
 		frame.eax.word      = VMW_BACK_MAGIC;
 		frame.ecx.part.low  = VMW_BACK_SET_CLIP_DATA;
-		frame.ecx.part.high = 0xffff;
+		frame.ecx.part.high = 0;
 		frame.edx.part.low  = VMW_BACK_RPC_PORT;
 		frame.edx.part.high = 0;
 
-		memcpy(&frame.ebx.word, text + (total - left),
-			left > 4 ? 4 : left);
+		memcpy(&frame.ebx.word, text + (total - left), left > 4 ? 4 : left);
 
 		BACKDOOR_OP("inl %%dx, %%eax;", &frame);
 
