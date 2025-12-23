@@ -169,29 +169,23 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 
 		case B_CLIPBOARD_CHANGED:
 		{
-			char* data;
-			ssize_t len;
-			BMessage* clip_message = NULL;
-
 			if (!system_clipboard->Lock())
 				return;
 
-			clip_message = system_clipboard->Data();
-			if (clip_message == NULL) {
-				system_clipboard->Unlock();
-				return;
-			}
-
-			clip_message->FindData("text/plain", B_MIME_TYPE, (const void**)&data, &len);
-			if(data == NULL) {
-				system_clipboard->Unlock();
-				return;
-			}
-
-			// Clear the host clipboard
-			backdoor.SetHostClipboard(data, len);
-
+			BMessage* clip_message = system_clipboard->Data();
 			system_clipboard->Unlock();
+
+			if (clip_message == NULL)
+				return;
+
+			char* data;
+			ssize_t len;
+			clip_message->FindData("text/plain", B_MIME_TYPE, (const void**)&data, &len);
+			if (data == NULL)
+				return;
+
+			// Send data to the host clipboard
+			backdoor.SetHostClipboard(data, len);
 		}
 		break;
 
@@ -203,27 +197,24 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 			if (backdoor.GetHostClipboard(&data, &len) != B_OK)
 				return;
 
-			BMessage* clip_message = NULL;
 			if (!system_clipboard->Lock()) {
 				free(data);
 				return;
 			}
 			system_clipboard->Clear();
 
-			if (len > 0) {
-				clip_message = system_clipboard->Data();
-				if (clip_message == NULL) {
-					free(data);
-					system_clipboard->Unlock();
-					return;
-				}
-
-				clip_message->AddData("text/plain", B_MIME_TYPE, data, len);
-				system_clipboard->Commit();
+			BMessage* clip_message = system_clipboard->Data();
+			if (clip_message == NULL) {
 				system_clipboard->Unlock();
+				free(data);
+				return;
 			}
-		}
 
+			clip_message->AddData("text/plain", B_MIME_TYPE, data, len);
+			system_clipboard->Commit();
+			system_clipboard->Unlock();
+			free(data);
+		}
 		break;
 
 		case CLOCK_POLL:
