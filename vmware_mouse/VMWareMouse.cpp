@@ -7,18 +7,17 @@
  */
 
 #include "VMWareMouse.h"
-#include "VMWareTypes.h"
 
 #include <Message.h>
-#include <Screen.h>
 #include <NodeMonitor.h>
+#include <Screen.h>
 
 #include <new>
 #include <syslog.h>
 
 
 #define DEBUG_PREFIX		"VMWareMouseFilter: "
-#define TRACE(x...)			/*syslog(DEBUG_PREFIX x)*/
+#define TRACE(x...)			// syslog(DEBUG_PREFIX x)
 #define TRACE_ALWAYS(x...)	syslog(LOG_INFO, DEBUG_PREFIX x)
 #define TRACE_ERROR(x...)	syslog(LOG_ERR, DEBUG_PREFIX x)
 
@@ -50,7 +49,7 @@ VMWareMouseFilter::VMWareMouseFilter()
 VMWareMouseFilter::~VMWareMouseFilter()
 {
 	backdoor.DisableMouseSharing(); // Harmless if it was not enabled
-	
+
 	delete settings;
 	settings_watcher->Lock();
 	settings_watcher->Quit();
@@ -63,23 +62,23 @@ VMWareMouseFilter::InitCheck()
 	if (backdoor.InVMware())
 		return B_OK;
 
-	return B_ERROR;	
+	return B_ERROR;
 }
 
 
 filter_result
-VMWareMouseFilter::Filter(BMessage *message, BList *outList)
+VMWareMouseFilter::Filter(BMessage* message, BList* outList)
 {
 	if (!activated)
 		return B_DISPATCH_MESSAGE;
 
-	switch(message->what) {
+	switch (message->what) {
 		case B_MOUSE_UP:
 		case B_MOUSE_DOWN:
 		case B_MOUSE_MOVED:
 		{
 			uint16 status, numWords;
-			_GetStatus(&status, &numWords);
+			backdoor.GetCursorStatus(status, numWords);
 			if (status == VMWARE_ERROR) {
 				TRACE_ERROR("error indicated when reading status, resetting\n");
 				backdoor.DisableMouseSharing();
@@ -93,7 +92,18 @@ VMWareMouseFilter::Filter(BMessage *message, BList *outList)
 			}
 
 			int32 x, y;
-			_GetPosition(x, y);
+			status_t ret = backdoor.GetCursorPosition(x, y);
+
+			if (ret == B_INTERRUPTED) { // Spurious event
+				TRACE_ERROR("B_INTERRUPTED\n");
+				return B_SKIP_MESSAGE;
+			}
+
+			if (ret != B_OK) {
+				TRACE_ERROR("ret != B_OK (%d)\n", ret);
+				break;
+			}
+
 			_ScalePosition(x, y);
 
 			if (x < 0 || y < 0) {
@@ -102,151 +112,17 @@ VMWareMouseFilter::Filter(BMessage *message, BList *outList)
 			}
 
 			TRACE("setting position to %ld, %ld\n", x, y);
-			message->RemoveName("where");
-			message->AddPoint("where", BPoint(x, y));
+			message->ReplacePoint("where", BPoint(x, y));
 			break;
 		}
 	}
-
 
 	return B_DISPATCH_MESSAGE;
 }
 
 
-// #pragma mark - VMWare Communication
-
-
 void
-VMWareMouseFilter::_ExecuteCommand(union packet_u &packet)
-{
-	packet.command.magic = VMWARE_PORT_MAGIC;
-	packet.command.port = VMWARE_PORT_NUMBER;
-
-	int dummy;
-#ifdef __x86_64__
-	asm volatile (
-			"pushq %%rbx;"
-			"pushq %%rax;"
-			"movl 12(%%rax), %%edx;"
-			"movl 8(%%rax), %%ecx;"
-			"movl 4(%%rax), %%ebx;"
-			"movl (%%rax), %%eax;"
-			"inl %%dx, %%eax;"
-			"xchgq %%rax, (%%rsp);"
-			"movl %%edx, 12(%%rax);"
-			"movl %%ecx, 8(%%rax);"
-			"movl %%ebx, 4(%%rax);"
-			"popq %%rbx;"
-			"movl %%ebx, (%%rax);"
-			"popq %%rbx;"
-		: "=a"(dummy)
-		: "0"(&packet)
-		: "rcx", "rdx", "memory");
-#else
-	asm volatile (
-			"pushl %%ebx;"
-			"pushl %%eax;"
-			"movl 12(%%eax), %%edx;"
-			"movl 8(%%eax), %%ecx;"
-			"movl 4(%%eax), %%ebx;"
-			"movl (%%eax), %%eax;"
-			"inl %%dx, %%eax;"
-			"xchgl %%eax, (%%esp);"
-			"movl %%edx, 12(%%eax);"
-			"movl %%ecx, 8(%%eax);"
-			"movl %%ebx, 4(%%eax);"
-			"popl (%%eax);"
-			"popl %%ebx;"
-		: "=a"(dummy)
-		: "0"(&packet)
-		: "ecx", "edx", "memory");
-#endif
-}
-
-
-bool
-VMWareMouseFilter::_Enable()
-{
-	union packet_u packet;
-	packet.command.command = VMWARE_COMMAND_POINTER_COMMAND;
-	packet.command.value = VMWARE_VALUE_READ_ID;
-	_ExecuteCommand(packet);
-
-	uint16 numWords;
-	_GetStatus(NULL, &numWords);
-	if (numWords == 0) {
-		TRACE_ERROR("didn't get back data on reading version id\n");
-		return false;
-	}
-
-	packet.command.command = VMWARE_COMMAND_POINTER_DATA;
-	packet.command.value = 1; // read size, 1 word
-	_ExecuteCommand(packet);
-
-	if (packet.version.version != VMWARE_VERSION_ID) {
-		TRACE_ERROR("got back unexpected version 0x%08lx\n",
-			packet.version.version);
-		return false;
-	}
-
-	// request absolute data
-	packet.command.command = VMWARE_COMMAND_POINTER_COMMAND;
-	packet.command.value = VMWARE_VALUE_REQUEST_ABSOLUTE;
-	_ExecuteCommand(packet);
-
-	TRACE_ALWAYS("successfully enabled\n");
-	return true;
-}
-
-
-void
-VMWareMouseFilter::_Disable()
-{
-	union packet_u packet;
-	packet.command.command = VMWARE_COMMAND_POINTER_COMMAND;
-	packet.command.value = VMWARE_VALUE_DISABLE;
-	_ExecuteCommand(packet);
-
-	uint16 status;
-	_GetStatus(&status, NULL);
-	if (status != VMWARE_ERROR) {
-		TRACE_ERROR("didn't get expected status value after disabling\n");
-		return;
-	}
-
-	TRACE_ALWAYS("successfully disabled\n");
-}
-
-
-void
-VMWareMouseFilter::_GetStatus(uint16 *status, uint16 *numWords)
-{
-	union packet_u packet;
-	packet.command.command = VMWARE_COMMAND_POINTER_STATUS;
-	packet.command.value = 0;
-	_ExecuteCommand(packet);
-
-	if (status != NULL)
-		*status = packet.status.status;
-	if (numWords != NULL)
-		*numWords = packet.status.num_words;
-}
-
-
-void
-VMWareMouseFilter::_GetPosition(int32 &x, int32 &y)
-{
-	union packet_u packet;
-	packet.command.command = VMWARE_COMMAND_POINTER_DATA;
-	packet.command.value = 4; // read size, 4 words
-	_ExecuteCommand(packet);
-	x = packet.data.x;
-	y = packet.data.y;
-}
-
-
-void
-VMWareMouseFilter::_ScalePosition(int32 &x, int32 &y)
+VMWareMouseFilter::_ScalePosition(int32& x, int32& y)
 {
 	static BScreen screen;
 	BRect frame = screen.Frame();
@@ -254,43 +130,41 @@ VMWareMouseFilter::_ScalePosition(int32 &x, int32 &y)
 	y = (int32)(y * (frame.Height() / 65535) + 0.5);
 }
 
+
 VMWareSettingsWatcher::VMWareSettingsWatcher(node_ref* ref)
-	: BLooper("vmwmouse settings watcher")
+	:
+	BLooper("vmwmouse settings watcher")
 {
 	Run();
 	watch_node(ref, B_WATCH_STAT, this);
 }
 
-VMWareSettingsWatcher::~VMWareSettingsWatcher()
-{
-}
 
 void
 VMWareSettingsWatcher::MessageReceived(BMessage* message)
 {
-	switch(message->what) {
+	switch (message->what) {
 		case B_NODE_MONITOR:
 			settings->Reload();
 			activated = settings->GetBool("mouse_enabled", true);
 
-				if (activated)
-					backdoor.EnableMouseSharing();
-				else
-					backdoor.DisableMouseSharing();
-		break;
+			if (activated)
+				backdoor.EnableMouseSharing();
+			else
+				backdoor.DisableMouseSharing();
+			break;
 
 		default:
 			BLooper::MessageReceived(message);
-		break;
+			break;
 	}
 }
 
 
 // #pragma mark - Instatiation Entry Point
 
-
-extern "C"
-BInputServerFilter *instantiate_input_filter()
+extern "C" BInputServerFilter*
+instantiate_input_filter()
 {
-	return new (std::nothrow) VMWareMouseFilter();
+	return new(std::nothrow) VMWareMouseFilter();
 }
