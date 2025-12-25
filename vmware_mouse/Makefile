@@ -106,9 +106,8 @@ SYMBOLS = TRUE
 
 ifeq ($(RELEASE),1)
 	OPTIMIZE= FULL
-	DEFINES= PERSISTENT_TRAY
 	SYMBOLS= FALSE
-	DEBUGGER= FALSE
+	DEBUGGER=
 endif
 
 #	specify additional compiler flags for all files
