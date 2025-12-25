@@ -108,6 +108,12 @@ SYMBOLS = TRUE
 #	a source-level debugger
 DEBUGGER =
 
+ifeq ($(RELEASE),1)
+	OPTIMIZE= FULL
+	SYMBOLS= FALSE
+	DEBUGGER=
+endif
+
 #	specify additional compiler flags for all files
 COMPILER_FLAGS = -Werror
 
