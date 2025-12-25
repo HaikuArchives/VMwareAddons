@@ -15,7 +15,6 @@ vmware_video_kernel: vmware_video/kernel/objects/vmware
 vmware_tray: vmware_tray/objects/vmware_tray
 	cp $< "$@"
 
-
 build:
 	make -C vmware_fs
 	make -C vmware_mouse
@@ -23,12 +22,13 @@ build:
 	make -C vmware_video/accelerant
 	make -C vmware_video/kernel
 
-release: mrproper
+release:
 	make RELEASE=1 -C vmware_fs
 	make RELEASE=1 -C vmware_mouse
 	make RELEASE=1 -C vmware_tray
 	make RELEASE=1 -C vmware_video/accelerant
 	make RELEASE=1 -C vmware_video/kernel
+
 clean:
 	make -C vmware_fs clean
 	make -C vmware_mouse clean
@@ -36,7 +36,11 @@ clean:
 	make -C vmware_video/accelerant clean
 	make -C vmware_video/kernel clean
 
-install: build
+release-install: clean release _install
+
+install: build _install
+
+_install:
 	# if we overwrite an in-use driver things get crashy, so delete those first
 	rm -f /boot/system/non-packaged/add-ons/kernel/drivers/dev/graphics/vmware
 	rm -f /boot/system/non-packaged/add-ons/accelerants/vmware.accelerant
