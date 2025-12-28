@@ -109,21 +109,11 @@ VMWBackdoor::GetHostClipboard(char** text, size_t* text_length)
 	if (text == NULL)
 		return B_ERROR;
 
-	char* buffer = NULL;
-	struct vm_backdoor frame;
-
-	bzero(&frame, sizeof(frame));
-
-	frame.eax.word      = VMW_BACK_MAGIC;
-	frame.ecx.part.low  = VMW_BACK_GET_CLIP_LENGTH;
-	frame.ecx.part.high = 0;
-	frame.edx.part.low  = VMW_BACK_RPC_PORT;
-	frame.edx.part.high = 0;
-
-	BACKDOOR_OP("inl %%dx, %%eax;", &frame);
+	regs_t regs;
+	BackdoorCall(&regs, VMW_BACK_GET_CLIP_LENGTH, 0);
 
 	uint32_t total, left;
-	total = left = frame.eax.word;
+	total = left = regs.eax;
 
 	// Max length is 65436, text will be truncated to that size.
 	// If we get 0xFFFFFFFF it means that either:
@@ -133,21 +123,15 @@ VMWBackdoor::GetHostClipboard(char** text, size_t* text_length)
 		return B_ERROR;
 	}
 
+	char* buffer = NULL;
 	if ((buffer = (char*)malloc((size_t)(total + 1))) == NULL)
 		return B_NO_MEMORY;
 
 	for (;;) {
-		bzero(&frame, sizeof(frame));
+		regs_t regs;
+		BackdoorCall(&regs, VMW_BACK_GET_CLIP_DATA, 0);
 
-		frame.eax.word      = VMW_BACK_MAGIC;
-		frame.ecx.part.low  = VMW_BACK_GET_CLIP_DATA;
-		frame.ecx.part.high = 0;
-		frame.edx.part.low  = VMW_BACK_RPC_PORT;
-		frame.edx.part.high = 0;
-
-		BACKDOOR_OP("inl %%dx, %%eax;", &frame);
-
-		memcpy(buffer + (total - left), &frame.eax.word, left > 4 ? 4 : left);
+		memcpy(buffer + (total - left), &regs.eax, left > 4 ? 4 : left);
 
 		if (left <= 4) {
 			buffer[total] = '\0';
@@ -173,33 +157,16 @@ VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 
 	text[text_length] = '\0';
 
-	struct vm_backdoor frame;
-	bzero(&frame, sizeof(frame));
-
 	uint32_t total, left;
 	total = left = strlen(text);
 
-	frame.eax.word      = VMW_BACK_MAGIC;
-	frame.ecx.part.low  = VMW_BACK_SET_CLIP_LENGTH;
-	frame.ecx.part.high = 0;
-	frame.edx.part.low  = VMW_BACK_RPC_PORT;
-	frame.edx.part.high = 0;
-	frame.ebx.word      = total;
-
-	BACKDOOR_OP("inl %%dx, %%eax;", &frame);
+	regs_t regs;
+	BackdoorCall(&regs, VMW_BACK_SET_CLIP_LENGTH, total);
 
 	for (;;) {
-		bzero(&frame, sizeof(frame));
-
-		frame.eax.word      = VMW_BACK_MAGIC;
-		frame.ecx.part.low  = VMW_BACK_SET_CLIP_DATA;
-		frame.ecx.part.high = 0;
-		frame.edx.part.low  = VMW_BACK_RPC_PORT;
-		frame.edx.part.high = 0;
-
-		memcpy(&frame.ebx.word, text + (total - left), left > 4 ? 4 : left);
-
-		BACKDOOR_OP("inl %%dx, %%eax;", &frame);
+		ulong param;
+		memcpy(&param, text + (total - left), left > 4 ? 4 : left);
+		BackdoorCall(&regs, VMW_BACK_SET_CLIP_DATA, param);
 
 		if (left <= 4)
 			break;
