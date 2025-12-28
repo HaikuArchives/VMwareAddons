@@ -50,11 +50,15 @@ _install:
 	# now reinstall everything
 	make -C vmware_fs install
 	make -C vmware_mouse install
-	make -C vmware_tray install
 	make -C vmware_video/accelerant install
 	make -C vmware_video/kernel install
 
+	# Avoid crashing Deskbar in case vmware_tray is already running.
+	launch_roster stop x-vnd.be-tskb
+	make -C vmware_tray install
 	mkdir -p "$(HOME)/config/settings/deskbar/menu/Desktop applets"
 	ln -sf /boot/system/non-packaged/bin/vmware_tray "$(HOME)/config/settings/deskbar/menu/Desktop applets/VMware add-ons"
+	# Safe to restart Deskbar now.
+	launch_roster start x-vnd.be-tskb
 
 .PHONY: build release clean
