@@ -22,7 +22,7 @@
 VMWAddOnsSettings settings;
 
 #define CLIP_POLL_DELAY 1000000
-#define CLOCK_POLL_DELAY 30000000
+#define CLOCK_POLL_DELAY 60000000
 
 extern "C" _EXPORT BView* instantiate_deskbar_item(float /*maxWidth*/, float maxHeight)
 {
@@ -219,7 +219,7 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 
 		case CLOCK_POLL:
 		{
-			int32 clock_value = backdoor.GetHostClock();
+			ulong clock_value = backdoor.GetHostClock();
 			if (clock_value > 0)
 				set_real_time_clock(clock_value);
 		}

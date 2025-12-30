@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 
 
 VMWBackdoor::VMWBackdoor()
@@ -211,19 +210,22 @@ VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 	return B_OK;
 }
 
-int32
+
+ulong
 VMWBackdoor::GetHostClock()
 {
-	if (!InVMware()) return 0;
-	
+	if (!InVMware())
+		return 0;
+
 	regs_t regs;
 	BackdoorCall(&regs, VMW_BACK_GET_HOST_TIME);
-	
-	if (regs.eax <= 0)
+
+	// regs' fields are ulong
+	if (regs.eax == 0xFFFFFFFF)
 		return 0;
-	
-	// EAX contains the GMT (in seconds since 1/1/1970), EDX contains the
-	// timezone offset (in minutes)
-	
-	return regs.eax - 60 * regs.edx;
+
+	// EAX contains the GMT (in seconds since 1/1/1970)
+	// On WS4.0/GSX2.5 and earlier EDX contained the timezone offset (in minutes),
+	// but returns 0 on WS4.5/GSX3.2 and later.
+	return regs.eax;
 }
