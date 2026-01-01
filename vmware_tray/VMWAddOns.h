@@ -16,6 +16,7 @@
 #define RELOAD_SETTINGS 'reSg'
 #define MOUSE_SHARING 'moSh'
 #define CLIPBOARD_SHARING 'clSh'
+#define TIMESYNC_HOST 'TsyH'
 #define REMOVE_FROM_DESKBAR 'rmDe'
 #define CLIPBOARD_POLL 'clPo'
 #define CLOCK_POLL 'ckPo'

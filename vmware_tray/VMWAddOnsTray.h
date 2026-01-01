@@ -36,6 +36,7 @@ private:
 	void					init();
 	void					RemoveMyself(bool askUser);
 	void					SetClipboardSharing(bool enable);
+	void					SetTimeSynchronization(bool enable);
 
 	BBitmap*				icon_all;
 	BBitmap*				icon_mouse;
@@ -52,7 +53,7 @@ private:
 
 class VMWAddOnsMenu: public BPopUpMenu {
 public:
-					VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware);
+					VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& backdoor);
 	virtual			~VMWAddOnsMenu();
 };
 

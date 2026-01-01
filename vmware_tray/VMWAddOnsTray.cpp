@@ -126,7 +126,7 @@ void
 VMWAddOnsTray::MouseDown(BPoint where)
 {
 	ConvertToScreen(&where);
-	VMWAddOnsMenu* menu = new VMWAddOnsMenu(this, backdoor.InVMware());
+	VMWAddOnsMenu* menu = new VMWAddOnsMenu(this, backdoor);
 	menu->Go(where, true, true, ConvertToScreen(Bounds()), true);
 }
 
@@ -136,18 +136,40 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 	switch(message->what) {
 		case MOUSE_SHARING:
 		{
-			bool sharing_enabled = settings.GetBool("mouse_enabled", true);
-			settings.SetBool("mouse_enabled", !sharing_enabled);
+			bool value = settings.GetBool("mouse_enabled", true);
+			value = !value;
+			// Only enable mouse sharing if both guest and host have it enabled.
+			if (!backdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
+				value = false;
+
+			settings.SetBool("mouse_enabled", value);
 			this->Invalidate();
 		}
 		break;
 
 		case CLIPBOARD_SHARING:
 		{
-			bool sharing_enabled = settings.GetBool("clip_enabled", true);
-			settings.SetBool("clip_enabled", !sharing_enabled);
-			SetClipboardSharing(!sharing_enabled);
+			bool value = settings.GetBool("clip_enabled", true);
+			value = !value;
+			// Only enable clipboard sharing if both guest and host have it enabled.
+			if (!backdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
+				value = false;
+
+			settings.SetBool("clip_enabled", value);
+			SetClipboardSharing(value);
 			this->Invalidate();
+		}
+		break;
+
+		case TIMESYNC_HOST:
+		{
+			bool value = settings.GetBool("timesync_enabled", true);
+			value = !value;
+			// Only enable timesync if both guest and host have it enabled.
+			if (!backdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
+				value = false;
+			settings.SetBool("timesync_enabled", value);
+			SetTimeSynchronization(value);
 		}
 		break;
 
@@ -254,10 +276,10 @@ VMWAddOnsTray::AttachedToWindow()
 
 	SetLowColor(ViewColor());
 
-	if (backdoor.InVMware())
+	if (backdoor.InVMware()) {
 		SetClipboardSharing(settings.GetBool("clip_enabled", true));
-	
-	clock_sync = new BMessageRunner(this, new BMessage(CLOCK_POLL), CLOCK_POLL_DELAY);
+		SetTimeSynchronization(settings.GetBool("timesync_enabled", true));
+	}
 }
 
 void
@@ -273,6 +295,18 @@ VMWAddOnsTray::SetClipboardSharing(bool enable)
 		system_clipboard->StopWatching(this);
 	}
 }
+
+
+void
+VMWAddOnsTray::SetTimeSynchronization(bool enable)
+{
+	delete clock_sync;
+	clock_sync = NULL;
+
+	if (enable)
+		clock_sync = new BMessageRunner(this, new BMessage(CLOCK_POLL), CLOCK_POLL_DELAY);
+}
+
 
 int32
 removeFromDeskbar(void *)
@@ -316,20 +350,33 @@ VMWAddOnsTray::RemoveMyself(bool askUser)
 	}
 }
 
-VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, bool in_vmware)
+VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& backdoor)
 	:BPopUpMenu("tray_menu", false, false)
 {
 	BMenuItem* menu_item;
 
 	SetFont(be_plain_font);
 
-	if (in_vmware) {
+	if (backdoor.InVMware()) {
 		menu_item = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
-		menu_item->SetMarked(settings.GetBool("mouse_enabled", true));;
+		if (backdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
+			menu_item->SetMarked(settings.GetBool("mouse_enabled", true));
+		else
+			menu_item->SetMarked(false);
 		AddItem(menu_item);
 
 		menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
-		menu_item->SetMarked(settings.GetBool("clip_enabled", true));
+		if (backdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
+			menu_item->SetMarked(settings.GetBool("clip_enabled", true));
+		else
+			menu_item->SetMarked(false);
+		AddItem(menu_item);
+
+		menu_item = new BMenuItem("Enable time synchronization", new BMessage(TIMESYNC_HOST));
+		if (backdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
+			menu_item->SetMarked(settings.GetBool("timesync_enabled", true));
+		else
+			menu_item->SetMarked(false);
 		AddItem(menu_item);
 
 		if (!tray->cleanup_in_process)
