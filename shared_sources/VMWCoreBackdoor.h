@@ -10,13 +10,11 @@
 
 #include <Message.h>
 
-#define VMW_BACK_MAGIC				0x564D5868UL
 // https://web.archive.org/web/20100610223425/http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
+#define VMW_BACK_MAGIC				0x564D5868UL
 #define VMW_BACK_PORT				0x00005658UL
 
 #define VMWARE_ERROR				0xFFFF
-
-#define VMW_BACK_GET_VERSION		0x0A
 
 #define VMW_BACK_RPC_MAGIC			0x49435052UL
 #define VMW_BACK_RPC_PORT			0x5658
@@ -29,11 +27,15 @@
 #define VMW_BACK_RPC_OK				0x00010000UL
 #define VMW_BACK_RPC_SEND_L_OK		0x00810000UL
 #define VMW_BACK_RPC_GET_L_OK		0x00830000UL
+
 #define VMW_BACK_GET_CURSOR 		0x04
 #define VMW_BACK_GET_CLIP_LENGTH	0x06
 #define VMW_BACK_GET_CLIP_DATA		0x07
 #define VMW_BACK_SET_CLIP_LENGTH	0x08
 #define VMW_BACK_SET_CLIP_DATA		0x09
+#define VMW_BACK_GET_VERSION		0x0A
+#define VMW_BACK_GET_GUI_SETTING	0x0D
+#define VMW_BACK_SET_GUI_SETTING	0x0E
 #define VMW_BACK_GET_HOST_TIME		0x17
 #define VMW_BACK_MOUSE_DATA			0x27
 #define VMW_BACK_MOUSE_STATUS		0x28

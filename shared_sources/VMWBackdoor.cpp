@@ -178,6 +178,39 @@ VMWBackdoor::SetHostClipboard(char* text, size_t text_length)
 }
 
 
+bool
+VMWBackdoor::GetGUISetting(gui_setting setting)
+{
+	if (!InVMware())
+		return 0;
+
+	regs_t regs;
+	BackdoorCall(&regs, VMW_BACK_GET_GUI_SETTING);
+	return (regs.eax & setting) != 0;
+}
+
+/*
+void
+VMWBackdoor::SetGUISetting(gui_setting setting, bool enabled)
+{
+	if (!InVMware())
+		return;
+
+	regs_t regs;
+	// Get current settings:
+	BackdoorCall(&regs, VMW_BACK_GET_GUI_SETTING);
+	ulong settings = regs.eax;
+
+	// Set the one requested:
+	if (enabled)
+		settings |= setting;
+	else
+		settings &= (settings ^ setting);
+
+	BackdoorCall(&regs, VMW_BACK_SET_GUI_SETTING, setting);
+}
+*/
+
 ulong
 VMWBackdoor::GetHostClock()
 {
