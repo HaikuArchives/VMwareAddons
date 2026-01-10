@@ -32,7 +32,7 @@ public:
 
 private:
 		void					_ScalePosition(int32& x, int32& y);
-		VMWareSettingsWatcher*	settings_watcher;
+		VMWareSettingsWatcher*	fSettingsWatcher;
 };
 
 #endif // VMWARE_MOUSE_H

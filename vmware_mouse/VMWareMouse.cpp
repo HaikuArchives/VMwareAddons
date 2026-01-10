@@ -22,9 +22,10 @@
 #define TRACE_ERROR(x...)	syslog(LOG_ERR, DEBUG_PREFIX x)
 
 
-VMWAddOnsSettings* settings;
-bool activated;
-VMWBackdoor backdoor;
+bool gActivated;
+VMWBackdoor gBackdoor;
+VMWAddOnsSettings* gSettings;
+
 
 // #pragma mark - Public BInputServerFilter API
 
@@ -34,9 +35,9 @@ VMWareMouseFilter::VMWareMouseFilter()
 	BInputServerFilter()
 {
 	node_ref nref;
-	settings = new VMWAddOnsSettings(&nref);
-	settings_watcher = new VMWareSettingsWatcher(&nref);
-	activated = settings->GetBool("mouse_enabled", true);
+	gSettings = new VMWAddOnsSettings(&nref);
+	fSettingsWatcher = new VMWareSettingsWatcher(&nref);
+	gActivated = gSettings->GetBool("mouse_enabled", true);
 
 	// At this point, the mouse may have not moved since the system was booted.
 	// VMware will erase the mouse settings when the user will start using
@@ -48,18 +49,18 @@ VMWareMouseFilter::VMWareMouseFilter()
 
 VMWareMouseFilter::~VMWareMouseFilter()
 {
-	backdoor.DisableMouseSharing(); // Harmless if it was not enabled
+	gBackdoor.DisableMouseSharing(); // Harmless if it was not enabled
 
-	delete settings;
-	settings_watcher->Lock();
-	settings_watcher->Quit();
+	delete gSettings;
+	fSettingsWatcher->Lock();
+	fSettingsWatcher->Quit();
 }
 
 
 status_t
 VMWareMouseFilter::InitCheck()
 {
-	if (backdoor.InVMware())
+	if (gBackdoor.InVMware())
 		return B_OK;
 
 	return B_ERROR;
@@ -69,7 +70,7 @@ VMWareMouseFilter::InitCheck()
 filter_result
 VMWareMouseFilter::Filter(BMessage* message, BList* outList)
 {
-	if (!activated)
+	if (!gActivated)
 		return B_DISPATCH_MESSAGE;
 
 	switch (message->what) {
@@ -77,30 +78,21 @@ VMWareMouseFilter::Filter(BMessage* message, BList* outList)
 		case B_MOUSE_DOWN:
 		case B_MOUSE_MOVED:
 		{
-			uint16 status, numWords;
-			backdoor.GetCursorStatus(status, numWords);
-			if (status == VMWARE_ERROR) {
-				TRACE_ERROR("error indicated when reading status, resetting\n");
-				backdoor.DisableMouseSharing();
-				backdoor.EnableMouseSharing();
+			int32 x, y;
+			status_t ret = gBackdoor.GetCursorPosition(x, y);
+
+			if (ret == B_ERROR) {
+				TRACE("Filter(): Re-enabling pointer sharing.\n");
+				gBackdoor.DisableMouseSharing();
+				gBackdoor.EnableMouseSharing();
 				break;
 			}
 
-			if (numWords == 0) {
-				// no actual data availabe, spurious event happens on fast move
-				return B_SKIP_MESSAGE;
-			}
-
-			int32 x, y;
-			status_t ret = backdoor.GetCursorPosition(x, y);
-
-			if (ret == B_INTERRUPTED) { // Spurious event
-				TRACE_ERROR("B_INTERRUPTED\n");
-				return B_SKIP_MESSAGE;
-			}
-
-			if (ret != B_OK) {
-				TRACE_ERROR("ret != B_OK (%d)\n", ret);
+			if (ret == B_INTERRUPTED) {
+				// Button clicks can generate B_MOUSE_MOVED without data. Skip those.
+				if (message->what == B_MOUSE_MOVED)
+					return B_SKIP_MESSAGE;
+				// But do not skip actual button down/up events.
 				break;
 			}
 
@@ -133,7 +125,7 @@ VMWareMouseFilter::_ScalePosition(int32& x, int32& y)
 
 VMWareSettingsWatcher::VMWareSettingsWatcher(node_ref* ref)
 	:
-	BLooper("vmwmouse settings watcher")
+	BLooper("vmwware_mouse settings watcher")
 {
 	Run();
 	watch_node(ref, B_WATCH_STAT, this);
@@ -145,13 +137,13 @@ VMWareSettingsWatcher::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
 		case B_NODE_MONITOR:
-			settings->Reload();
-			activated = settings->GetBool("mouse_enabled", true);
+			gSettings->Reload();
+			gActivated = gSettings->GetBool("mouse_enabled", true);
 
-			if (activated)
-				backdoor.EnableMouseSharing();
+			if (gActivated)
+				gBackdoor.EnableMouseSharing();
 			else
-				backdoor.DisableMouseSharing();
+				gBackdoor.DisableMouseSharing();
 			break;
 
 		default:
