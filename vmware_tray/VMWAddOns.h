@@ -1,14 +1,14 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #ifndef VMW_ADDONS_H
 #define VMW_ADDONS_H
 
 // Application constants
 #define APP_SIG "application/x-vnd.VinDuv.VMwareAddOns"
-#define APP_NAME "VMW Add-ons"
+#define APP_NAME "VMWare Add-ons"
 #define APP_VERSION "1.2.2"
 #define TRAY_NAME "vmware add-ons"
 

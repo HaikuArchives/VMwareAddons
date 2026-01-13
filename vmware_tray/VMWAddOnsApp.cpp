@@ -1,33 +1,28 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #include "VMWAddOnsApp.h"
 
-#include <stdio.h>
-
-#include <Alert.h>
 #include <Deskbar.h>
 #include <Roster.h>
 
-#include <string.h>
-
 #include "VMWAddOns.h"
-#include "VMWAddOnsTray.h"
+
 
 #define PERSISTENT_TRAY
 
+
 VMWAddOnsApp::VMWAddOnsApp()
-	: BApplication(APP_SIG)
+	:
+	BApplication(APP_SIG)
 {
 }
 
-VMWAddOnsApp::~VMWAddOnsApp()
-{
-}
 
-void VMWAddOnsApp::ReadyToRun()
+void
+VMWAddOnsApp::ReadyToRun()
 {
 	BDeskbar db;
 
@@ -47,8 +42,10 @@ void VMWAddOnsApp::ReadyToRun()
 	be_app->Quit();
 }
 
-int main()
+
+int
+main()
 {
-	VMWAddOnsApp *app = new VMWAddOnsApp();
+	VMWAddOnsApp* app = new VMWAddOnsApp();
 	app->Run();
 }

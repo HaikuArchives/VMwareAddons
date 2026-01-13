@@ -1,29 +1,33 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #ifndef VMW_CLEANUP_H
 #define VWM_CLEANUP_H
 
+#include <File.h>
+#include <Directory.h>
 #include <SupportDefs.h>
 
-#include "VMWAddOnsStatusWindow.h"
+
+class VMWAddOnsStatusWindow;
+
 
 class VMWAddOnsCleanup {
 public:
-					VMWAddOnsCleanup();
-	virtual			~VMWAddOnsCleanup();
 	static int32	Start(void* /*data*/);
 
-	dev_t*			to_cleanup;
-	uint			devices_count;
+public:
+	uint			fDevicesCount;
+	dev_t*			fToCleanup;
 
 private:
 	status_t		ThreadLoop();
 	status_t		WriteToFile(BFile* file, char* buffer);
-	status_t		FillDirectory(BDirectory* root_directory, char* buffer);
-	VMWAddOnsStatusWindow* status_window;
+	status_t		FillDirectory(BDirectory* rootDirectory, char* buffer);
+	VMWAddOnsStatusWindow* fStatusWindow;
 };
+
 
 #endif

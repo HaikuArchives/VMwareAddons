@@ -1,298 +1,310 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #include "VMWAddOnsTray.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <Alert.h>
 #include <Deskbar.h>
-#include <Roster.h>
 #include <MenuItem.h>
 #include <Mime.h>
 
 #include "VMWAddOns.h"
-#include "VMWAddOnsSettings.h"
 #include "VMWAddOnsCleanup.h"
+#include "VMWAddOnsSettings.h"
+
 #include "icons.h"
 
-VMWAddOnsSettings settings;
 
 #define CLIP_POLL_DELAY 1000000
 #define CLOCK_POLL_DELAY 60000000
 
-extern "C" _EXPORT BView* instantiate_deskbar_item(float /*maxWidth*/, float maxHeight)
+
+VMWAddOnsSettings gSettings;
+
+
+extern "C" _EXPORT BView*
+instantiate_deskbar_item(float /*maxWidth*/, float maxHeight)
 {
-	return (new VMWAddOnsTray(maxHeight));
+	return new VMWAddOnsTray(maxHeight);
 }
+
+
+// #pragma mark -
+
 
 VMWAddOnsTray::VMWAddOnsTray(float maxHeight)
-	: BView(BRect(0, 0, maxHeight - 1, maxHeight - 1),
-		TRAY_NAME, B_FOLLOW_LEFT | B_FOLLOW_TOP, B_WILL_DRAW)
+	:
+	BView(BRect(0, 0, maxHeight - 1, maxHeight - 1), TRAY_NAME, B_FOLLOW_LEFT | B_FOLLOW_TOP,
+		  B_WILL_DRAW)
 {
-		init();
+	Init();
 }
 
-VMWAddOnsTray::VMWAddOnsTray(BMessage* mdArchive)
-	:BView(mdArchive)
+
+VMWAddOnsTray::VMWAddOnsTray(BMessage* message)
+	:
+	BView(message)
 {
-	init();
+	Init();
 }
+
 
 void
-VMWAddOnsTray::init()
+VMWAddOnsTray::Init()
 {
-	system_clipboard = new BClipboard("system");
-	clipboard_poller = NULL;
-	clock_sync = NULL;
-	cleanup_in_process = false;
+	fSystemClipboard = new BClipboard("system");
+	fClipboardPoller = NULL;
+	fClockSynchonizer = NULL;
+	fCleanupInProgress = false;
 
-	icon_all = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
-	icon_all->SetBits(pic_act_yy, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
+	fIconAll = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
+	fIconAll->SetBits(pic_act_yy, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
 
-	icon_mouse = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
-	icon_mouse->SetBits(pic_act_ny, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
+	fIconMouse = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
+	fIconMouse->SetBits(pic_act_ny, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
 
-	icon_clipboard = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
-	icon_clipboard->SetBits(pic_act_yn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
+	fIconClipboard = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
+	fIconClipboard->SetBits(pic_act_yn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
 
-	icon_none = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
-	icon_none->SetBits(pic_act_nn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
+	fIconNone = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
+	fIconNone->SetBits(pic_act_nn, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
 
-	icon_disabled = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
-	icon_disabled->SetBits(pic_disabled, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
+	fIconDisabled = new BBitmap(BRect(0, 0, B_MINI_ICON - 1, B_MINI_ICON - 1), B_CMAP8);
+	fIconDisabled->SetBits(pic_disabled, B_MINI_ICON * B_MINI_ICON, 0, B_CMAP8);
 
 	SetDrawingMode(B_OP_ALPHA);
 	SetFlags(Flags() | B_WILL_DRAW);
 }
 
+
 VMWAddOnsTray::~VMWAddOnsTray()
 {
-	delete icon_all;
-	delete icon_mouse;
-	delete icon_clipboard;
-	delete icon_none;
-	delete icon_disabled;
+	delete fIconAll;
+	delete fIconMouse;
+	delete fIconClipboard;
+	delete fIconNone;
+	delete fIconDisabled;
 
-	delete system_clipboard;
-	delete clipboard_poller;
-	delete clock_sync;
+	delete fSystemClipboard;
+	delete fClipboardPoller;
+	delete fClockSynchonizer;
 }
 
+
 status_t
-VMWAddOnsTray::Archive(BMessage *data, bool deep = true) const
+VMWAddOnsTray::Archive(BMessage* data, bool deep = true) const
 {
 	data->AddString("add_on", APP_SIG);
 
 	return BView::Archive(data, deep);
 }
 
+
 VMWAddOnsTray*
-VMWAddOnsTray::Instantiate(BMessage *data)
+VMWAddOnsTray::Instantiate(BMessage* message)
 {
-	return (new VMWAddOnsTray(data));
+	return new VMWAddOnsTray(message);
 }
 
+
 void
-VMWAddOnsTray::Draw(BRect /*update_rect*/) {
-	BRect tray_bounds(Bounds());
+VMWAddOnsTray::Draw(BRect /*update_rect*/)
+{
+	BRect trayBounds(Bounds());
 
-	if (Parent()) SetHighColor(Parent()->ViewColor());
-	else SetHighColor(189, 186, 189, 255);
-	FillRect(tray_bounds);
+	if (Parent())
+		SetHighColor(Parent()->ViewColor());
+	else
+		SetHighColor(189, 186, 189, 255);
 
-	if (!backdoor.InVMware()) {
-		DrawBitmap(icon_disabled);
+	FillRect(trayBounds);
+
+	if (!fBackdoor.InVMware()) {
+		DrawBitmap(fIconDisabled);
 		return;
 	}
 
-	if (settings.GetBool("mouse_enabled", true)) {
-		if (settings.GetBool("clip_enabled", true))
-			DrawBitmap(icon_all, icon_all->Bounds(), tray_bounds);
+	if (gSettings.GetBool("mouse_enabled", true))
+		if (gSettings.GetBool("clip_enabled", true))
+			DrawBitmap(fIconAll, fIconAll->Bounds(), trayBounds);
 		else
-			DrawBitmap(icon_mouse, icon_mouse->Bounds(), tray_bounds);
-	} else {
-		if (settings.GetBool("clip_enabled", true))
-			DrawBitmap(icon_clipboard, icon_clipboard->Bounds(), tray_bounds);
-		else
-			DrawBitmap(icon_none, icon_none->Bounds(), tray_bounds);
-	}
+			DrawBitmap(fIconMouse, fIconMouse->Bounds(), trayBounds);
+	else if (gSettings.GetBool("clip_enabled", true))
+		DrawBitmap(fIconClipboard, fIconClipboard->Bounds(), trayBounds);
+	else
+		DrawBitmap(fIconNone, fIconNone->Bounds(), trayBounds);
 }
+
 
 void
 VMWAddOnsTray::MouseDown(BPoint where)
 {
 	ConvertToScreen(&where);
-	VMWAddOnsMenu* menu = new VMWAddOnsMenu(this, backdoor);
+	VMWAddOnsMenu* menu = new VMWAddOnsMenu(this, fBackdoor);
 	menu->Go(where, true, true, ConvertToScreen(Bounds()), true);
 }
+
 
 void
 VMWAddOnsTray::MessageReceived(BMessage* message)
 {
-	switch(message->what) {
+	switch (message->what) {
 		case MOUSE_SHARING:
 		{
-			bool value = settings.GetBool("mouse_enabled", true);
+			bool value = gSettings.GetBool("mouse_enabled", true);
 			value = !value;
 			// Only enable mouse sharing if both guest and host have it enabled.
-			if (!backdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
+			if (!fBackdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
 				value = false;
 
-			settings.SetBool("mouse_enabled", value);
+			gSettings.SetBool("mouse_enabled", value);
 			this->Invalidate();
-		}
-		break;
+		} break;
 
 		case CLIPBOARD_SHARING:
 		{
-			bool value = settings.GetBool("clip_enabled", true);
+			bool value = gSettings.GetBool("clip_enabled", true);
 			value = !value;
 			// Only enable clipboard sharing if both guest and host have it enabled.
-			if (!backdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
+			if (!fBackdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
 				value = false;
 
-			settings.SetBool("clip_enabled", value);
+			gSettings.SetBool("clip_enabled", value);
 			SetClipboardSharing(value);
 			this->Invalidate();
-		}
-		break;
+		} break;
 
 		case TIMESYNC_HOST:
 		{
-			bool value = settings.GetBool("timesync_enabled", true);
+			bool value = gSettings.GetBool("timesync_enabled", true);
 			value = !value;
 			// Only enable timesync if both guest and host have it enabled.
-			if (!backdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
+			if (!fBackdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
 				value = false;
-			settings.SetBool("timesync_enabled", value);
+			gSettings.SetBool("timesync_enabled", value);
 			SetTimeSynchronization(value);
-		}
-		break;
+		} break;
 
 		case REMOVE_FROM_DESKBAR:
 			RemoveMyself(true);
-		break;
+			break;
 
 		case B_ABOUT_REQUESTED:
 		{
 			BAlert* alert = new BAlert("about",
 				APP_NAME ", version " APP_VERSION "\n"
-				"© 2009, Vincent Duvert\n"
-				"Distributed under the terms of the MIT License.", "OK", NULL, NULL,
-				B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
+						 "© 2009, Vincent Duvert\n"
+						 "Distributed under the terms of the MIT License.",
+				"OK", NULL, NULL, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
 			alert->SetShortcut(0, B_ENTER);
 			alert->Go(NULL);
-		}
-		break;
+		} break;
 
 		case B_CLIPBOARD_CHANGED:
 		{
-			if (!system_clipboard->Lock())
+			if (!fSystemClipboard->Lock())
 				return;
 
-			BMessage* clip_message = system_clipboard->Data();
-			system_clipboard->Unlock();
+			BMessage* clipMessage = fSystemClipboard->Data();
+			fSystemClipboard->Unlock();
 
-			if (clip_message == NULL)
+			if (clipMessage == NULL)
 				return;
 
 			char* data;
 			ssize_t len;
-			clip_message->FindData("text/plain", B_MIME_TYPE, (const void**)&data, &len);
+			clipMessage->FindData("text/plain", B_MIME_TYPE, (const void**)&data, &len);
 			if (data == NULL)
 				return;
 
 			// Send data to the host clipboard
-			backdoor.SetHostClipboard(data, len);
-		}
-		break;
+			fBackdoor.SetHostClipboard(data, len);
+		} break;
 
 		case CLIPBOARD_POLL:
 		{
 			char* data;
 			size_t len;
 
-			if (backdoor.GetHostClipboard(&data, &len) != B_OK)
+			if (fBackdoor.GetHostClipboard(&data, &len) != B_OK)
 				return;
 
-			if (!system_clipboard->Lock()) {
+			if (!fSystemClipboard->Lock()) {
 				free(data);
 				return;
 			}
-			system_clipboard->Clear();
+			fSystemClipboard->Clear();
 
-			BMessage* clip_message = system_clipboard->Data();
-			if (clip_message == NULL) {
-				system_clipboard->Unlock();
+			BMessage* clipMessage = fSystemClipboard->Data();
+			if (clipMessage == NULL) {
+				fSystemClipboard->Unlock();
 				free(data);
 				return;
 			}
 
-			clip_message->AddData("text/plain", B_MIME_TYPE, data, len);
-			system_clipboard->Commit();
-			system_clipboard->Unlock();
+			clipMessage->AddData("text/plain", B_MIME_TYPE, data, len);
+			fSystemClipboard->Commit();
+			fSystemClipboard->Unlock();
 			free(data);
-		}
-		break;
+		} break;
 
 		case CLOCK_POLL:
 		{
-			ulong clock_value = backdoor.GetHostClock();
-			if (clock_value > 0)
-				set_real_time_clock(clock_value);
-		}
-		break;
+			ulong clockValue = fBackdoor.GetHostClock();
+			if (clockValue > 0)
+				set_real_time_clock(clockValue);
+		} break;
 
 		case SHRINK_DISKS:
 		{
-			thread_id th = spawn_thread(VMWAddOnsCleanup::Start,
-				"vmw cleanup", B_LOW_PRIORITY, this);
-			if (th > 0) {
-				cleanup_in_process = true;
-				resume_thread(th);
+			thread_id thread
+				= spawn_thread(VMWAddOnsCleanup::Start, "vmw cleanup", B_LOW_PRIORITY, this);
+			if (thread > 0) {
+				fCleanupInProgress = true;
+				resume_thread(thread);
 			}
 		}
 
 		default:
 			BView::MessageReceived(message);
-		break;
+			break;
 	}
 }
+
 
 void
 VMWAddOnsTray::AttachedToWindow()
 {
-	if (Parent() != NULL) {
+	if (Parent() != NULL)
 		if ((Parent()->Flags() & B_DRAW_ON_CHILDREN) != 0)
 			SetViewColor(B_TRANSPARENT_COLOR);
 		else
 			SetViewColor(Parent()->ViewColor());
-	} else
+	else
 		SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	SetLowColor(ViewColor());
 
-	if (backdoor.InVMware()) {
-		SetClipboardSharing(settings.GetBool("clip_enabled", true));
-		SetTimeSynchronization(settings.GetBool("timesync_enabled", true));
+	if (fBackdoor.InVMware()) {
+		SetClipboardSharing(gSettings.GetBool("clip_enabled", true));
+		SetTimeSynchronization(gSettings.GetBool("timesync_enabled", true));
 	}
 }
+
 
 void
 VMWAddOnsTray::SetClipboardSharing(bool enable)
 {
-	delete clipboard_poller;
-	clipboard_poller = NULL;
+	delete fClipboardPoller;
+	fClipboardPoller = NULL;
 
 	if (enable) {
-		system_clipboard->StartWatching(this);
-		clipboard_poller = new BMessageRunner(this, new BMessage(CLIPBOARD_POLL), CLIP_POLL_DELAY);
+		fSystemClipboard->StartWatching(this);
+		fClipboardPoller = new BMessageRunner(this, new BMessage(CLIPBOARD_POLL), CLIP_POLL_DELAY);
 	} else {
-		system_clipboard->StopWatching(this);
+		fSystemClipboard->StopWatching(this);
 	}
 }
 
@@ -300,16 +312,16 @@ VMWAddOnsTray::SetClipboardSharing(bool enable)
 void
 VMWAddOnsTray::SetTimeSynchronization(bool enable)
 {
-	delete clock_sync;
-	clock_sync = NULL;
+	delete fClockSynchonizer;
+	fClockSynchonizer = NULL;
 
 	if (enable)
-		clock_sync = new BMessageRunner(this, new BMessage(CLOCK_POLL), CLOCK_POLL_DELAY);
+		fClockSynchonizer = new BMessageRunner(this, new BMessage(CLOCK_POLL), CLOCK_POLL_DELAY);
 }
 
 
 int32
-removeFromDeskbar(void *)
+removeFromDeskbar(void*)
 {
 	BDeskbar db;
 	db.RemoveItem(TRAY_NAME);
@@ -317,18 +329,22 @@ removeFromDeskbar(void *)
 	return 0;
 }
 
+
 void
 VMWAddOnsTray::StartShrink()
 {
-	if (backdoor.OpenRPCChannel() == B_OK) {
-		backdoor.SendMessage("disk.shrink", true);
-		backdoor.CloseRPCChannel();
+	if (fBackdoor.OpenRPCChannel() == B_OK) {
+		fBackdoor.SendMessage("disk.shrink", true);
+		fBackdoor.CloseRPCChannel();
 	} else {
 		(new BAlert(TRAY_NAME,
-			"Unable to communicate with VMWare. Your VMWare version may be too old. Please start the process manually if your VMware version allows it.",
-			"Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
+			 "Unable to communicate with VMWare. Your VMWare version may be too old. Please start "
+			 "the process manually if your VMware version allows it.",
+			 "Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))
+			->Go();
 	}
 }
+
 
 void
 VMWAddOnsTray::RemoveMyself(bool askUser)
@@ -339,52 +355,62 @@ VMWAddOnsTray::RemoveMyself(bool askUser)
 	int32 result = 1;
 	if (askUser) {
 		result = (new BAlert(TRAY_NAME,
-		"Are you sure you want to quit ?\n"
-		"This will stop clipboard sharing (but not mouse sharing if it is running).",
-		"Cancel", "Quit", NULL, B_WIDTH_AS_USUAL, B_INFO_ALERT))->Go();
+					  "Are you sure you want to quit?\n"
+					  "This will stop clipboard sharing (but not mouse sharing if it is running).",
+					  "Cancel", "Quit", NULL, B_WIDTH_AS_USUAL, B_INFO_ALERT))
+					 ->Go();
 	}
 
 	if (result != 0) {
-		thread_id th = spawn_thread(removeFromDeskbar, "goodbye cruel world", B_NORMAL_PRIORITY, NULL);
-		if (th) resume_thread(th);
+		thread_id thread
+			= spawn_thread(removeFromDeskbar, "goodbye cruel world", B_NORMAL_PRIORITY, NULL);
+		if (thread)
+			resume_thread(thread);
 	}
 }
 
-VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& backdoor)
-	:BPopUpMenu("tray_menu", false, false)
+
+// #pragma mark -
+
+
+VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& fBackdoor)
+	:
+	BPopUpMenu("tray_menu", false, false)
 {
-	BMenuItem* menu_item;
+	BMenuItem* menuItem;
 
 	SetFont(be_plain_font);
 
-	if (backdoor.InVMware()) {
-		menu_item = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
-		if (backdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
-			menu_item->SetMarked(settings.GetBool("mouse_enabled", true));
+	if (fBackdoor.InVMware()) {
+		menuItem = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
+		if (fBackdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
+			menuItem->SetMarked(gSettings.GetBool("mouse_enabled", true));
 		else
-			menu_item->SetMarked(false);
-		AddItem(menu_item);
+			menuItem->SetMarked(false);
+		AddItem(menuItem);
 
-		menu_item = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
-		if (backdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
-			menu_item->SetMarked(settings.GetBool("clip_enabled", true));
+		menuItem = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
+		if (fBackdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
+			menuItem->SetMarked(gSettings.GetBool("clip_enabled", true));
 		else
-			menu_item->SetMarked(false);
-		AddItem(menu_item);
+			menuItem->SetMarked(false);
+		AddItem(menuItem);
 
-		menu_item = new BMenuItem("Enable time synchronization", new BMessage(TIMESYNC_HOST));
-		if (backdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
-			menu_item->SetMarked(settings.GetBool("timesync_enabled", true));
+		menuItem = new BMenuItem("Enable time synchronization", new BMessage(TIMESYNC_HOST));
+		if (fBackdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
+			menuItem->SetMarked(gSettings.GetBool("timesync_enabled", true));
 		else
-			menu_item->SetMarked(false);
-		AddItem(menu_item);
+			menuItem->SetMarked(false);
+		AddItem(menuItem);
 
-		if (!tray->cleanup_in_process)
-			AddItem(new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
+		if (!tray->fCleanupInProgress) {
+			AddItem(
+				new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
+		}
 	} else {
-		menu_item = new BMenuItem("Not running in VMware", NULL);
-		menu_item->SetEnabled(false);
-		AddItem(menu_item);
+		menuItem = new BMenuItem("Not running in VMware", NULL);
+		menuItem->SetEnabled(false);
+		AddItem(menuItem);
 	}
 
 	AddSeparatorItem();
@@ -394,8 +420,4 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& backdoor)
 
 	SetTargetForItems(tray);
 	SetAsyncAutoDestruct(true);
-}
-
-VMWAddOnsMenu::~VMWAddOnsMenu()
-{
 }
