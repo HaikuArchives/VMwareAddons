@@ -1,19 +1,15 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
-	Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
+ * Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #include "VMWCoreBackdoor.h"
 
 #include <setjmp.h>
-#include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <SupportDefs.h>
 
 void
 VMWCoreBackdoor::BackdoorCall(regs_t* regs, ulong command, ulong param)
@@ -23,8 +19,7 @@ VMWCoreBackdoor::BackdoorCall(regs_t* regs, ulong command, ulong param)
 	regs->ecx = command;
 	regs->edx = VMW_BACK_PORT;
 
-	// The VMWare backdoor get/sets EBX, but this register
-	// is used by PIC. So we use ESI instead.
+	// The VMWare backdoor get/sets EBX, but this register is used by PIC. So we use ESI instead.
 #ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx			\n\t" // Save ebx
@@ -52,6 +47,7 @@ VMWCoreBackdoor::BackdoorCall(regs_t* regs, ulong command, ulong param)
 #endif
 }
 
+
 void
 VMWCoreBackdoor::BackdoorRPCCall(regs_t* regs, ulong command, ulong param)
 {
@@ -60,9 +56,9 @@ VMWCoreBackdoor::BackdoorRPCCall(regs_t* regs, ulong command, ulong param)
 
 	regs->eax = param;
 	regs->ecx = command;
-	regs->edx = rpc_channel | VMW_BACK_RPC_PORT;
-	regs->esi = rpc_cookie1;
-	regs->edi = rpc_cookie2;
+	regs->edx = fRPCChannel | VMW_BACK_RPC_PORT;
+	regs->esi = fRPCCookie1;
+	regs->edi = fRPCCookie2;
 #ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx				\n\t" // Save ebx
@@ -92,15 +88,16 @@ VMWCoreBackdoor::BackdoorRPCCall(regs_t* regs, ulong command, ulong param)
 #endif
 }
 
+
 void
 VMWCoreBackdoor::BackdoorRPCSend(regs_t* regs, char* data, size_t length)
 {
-	regs->eax = rpc_cookie1;
+	regs->eax = fRPCCookie1;
 
 	regs->ecx = length;
-	regs->edx = rpc_channel | VMW_BACK_RPC_PORT2;
+	regs->edx = fRPCChannel | VMW_BACK_RPC_PORT2;
 	regs->esi = (ulong)data;
-	regs->edi = rpc_cookie2;
+	regs->edi = fRPCCookie2;
 #ifdef __i386__
 	asm volatile(
 		"pushl	%%ebx				\n\t" // Save ebx
@@ -138,16 +135,17 @@ VMWCoreBackdoor::BackdoorRPCSend(regs_t* regs, char* data, size_t length)
 #endif
 }
 
+
 void
 VMWCoreBackdoor::BackdoorRPCGet(regs_t* regs, char* data, size_t length)
 {
 	// TODO : if possible, combine this function with the previous one.
 
-	regs->eax = rpc_cookie2;
+	regs->eax = fRPCCookie2;
 
 	regs->ecx = length;
-	regs->edx = rpc_channel | VMW_BACK_RPC_PORT2;
-	regs->esi = rpc_cookie1;
+	regs->edx = fRPCChannel | VMW_BACK_RPC_PORT2;
+	regs->esi = fRPCCookie1;
 	regs->edi = (ulong)data;
 #ifdef __i386__
 	asm volatile(
@@ -186,26 +184,29 @@ VMWCoreBackdoor::BackdoorRPCGet(regs_t* regs, char* data, size_t length)
 #endif
 }
 
+
 #ifndef _KERNEL_MODE
 // Avoid segfault when trying to access the backdoor on real hardware...
 static sigjmp_buf sigbuffer;
 
-static void sighandler(int sig)
+static void
+sighandler(int sig)
 {
 	siglongjmp(sigbuffer, sig);
 }
 #endif
 
+
 VMWCoreBackdoor::VMWCoreBackdoor()
 {
-	rpc_opened = false;
+	fRPCOpened = false;
 
 	// Are we running in a VMware virtual machine ?
 
 #ifndef _KERNEL_MODE
 	if (sigsetjmp(sigbuffer, true) != 0) {
 		// We crashed during the backdoor access
-		in_vmware = false;
+		fInVMWare = false;
 		signal(SIGILL, SIG_DFL);
 
 		return;
@@ -216,63 +217,69 @@ VMWCoreBackdoor::VMWCoreBackdoor()
 
 	regs_t regs;
 	BackdoorCall(&regs, VMW_BACK_GET_VERSION, 0);
-	in_vmware = (regs.esi == VMW_BACK_MAGIC);
+	fInVMWare = (regs.esi == VMW_BACK_MAGIC);
 
 #ifndef _KERNEL_MODE
 	signal(SIGILL, SIG_DFL);
 #endif
 
-	if (!in_vmware)
-			return;
+	if (!fInVMWare)
+		return;
 
-	backdoor_access = create_sem(1, "vmware backdoor lock");
+	fBackdoorAccess = create_sem(1, "vmware backdoor semaphore");
 }
+
 
 VMWCoreBackdoor::~VMWCoreBackdoor()
 {
-	delete_sem(backdoor_access);
+	delete_sem(fBackdoorAccess);
 }
+
 
 bool
 VMWCoreBackdoor::InVMware() const
 {
-	return in_vmware;
+	return fInVMWare;
 }
+
 
 status_t
 VMWCoreBackdoor::OpenRPCChannel()
 {
-	if (!in_vmware) return B_NOT_ALLOWED;
+	if (!fInVMWare)
+		return B_NOT_ALLOWED;
 
-	if (rpc_opened)
+	if (fRPCOpened)
 		return B_ERROR;
 
 	regs_t regs;
-	rpc_channel = rpc_cookie1 = rpc_cookie2 = 0;
+	fRPCChannel = fRPCCookie1 = fRPCCookie2 = 0;
 	BackdoorRPCCall(&regs, VMW_BACK_RPC_OPEN, VMW_BACK_RPC_MAGIC);
 
 	if (regs.ecx != VMW_BACK_RPC_OK)
 		return B_ERROR;
 
-	rpc_opened = true;
-	rpc_channel = regs.edx;
-	rpc_cookie1 = regs.esi;
-	rpc_cookie2 = regs.edi;
+	fRPCOpened = true;
+	fRPCChannel = regs.edx;
+	fRPCCookie1 = regs.esi;
+	fRPCCookie2 = regs.edi;
 
 	return B_OK;
 }
 
+
 status_t
 VMWCoreBackdoor::SendMessage(const char* message, bool check_status, size_t length)
 {
-	if (!in_vmware) return B_NOT_ALLOWED;
+	if (!fInVMWare)
+		return B_NOT_ALLOWED;
 
 	if (message == NULL)
 		length = 0;
 	else if (length <= 0)
 		length = strlen(message);
 
-	if (acquire_sem(backdoor_access) != B_OK)
+	if (acquire_sem(fBackdoorAccess) != B_OK)
 		return B_ERROR;
 
 	regs_t regs;
@@ -280,7 +287,7 @@ VMWCoreBackdoor::SendMessage(const char* message, bool check_status, size_t leng
 	BackdoorRPCCall(&regs, VMW_BACK_RPC_SEND_LENGTH, length);
 
 	if (regs.ecx != VMW_BACK_RPC_SEND_L_OK) {
-		release_sem(backdoor_access);
+		release_sem(fBackdoorAccess);
 		return B_ERROR;
 	}
 
@@ -289,12 +296,12 @@ VMWCoreBackdoor::SendMessage(const char* message, bool check_status, size_t leng
 		BackdoorRPCSend(&regs, (char*)message, length);
 
 		if (regs.eax != VMW_BACK_RPC_OK) {
-			release_sem(backdoor_access);
+			release_sem(fBackdoorAccess);
 			return B_ERROR;
 		}
 	}
 
-	release_sem(backdoor_access);
+	release_sem(fBackdoorAccess);
 
 	if (check_status) {
 		char* response = GetMessage();
@@ -305,20 +312,22 @@ VMWCoreBackdoor::SendMessage(const char* message, bool check_status, size_t leng
 
 		free(response);
 
-		return (status = '1' ? B_OK : B_ERROR);
+		return status = '1' ? B_OK : B_ERROR;
 	}
 
 	return B_OK;
 }
 
+
 status_t
 VMWCoreBackdoor::SendAndGet(char* buffer, size_t* length, size_t buffer_length)
 {
 	uint reply_id;
-	
-	if (!in_vmware) return B_NOT_ALLOWED;
-	
-	if (acquire_sem(backdoor_access) != B_OK)
+
+	if (!fInVMWare)
+		return B_NOT_ALLOWED;
+
+	if (acquire_sem(fBackdoorAccess) != B_OK)
 		return B_ERROR;
 
 	regs_t regs;
@@ -335,51 +344,53 @@ VMWCoreBackdoor::SendAndGet(char* buffer, size_t* length, size_t buffer_length)
 		if (regs.eax != VMW_BACK_RPC_OK)
 			goto err;
 	}
-	
+
 	// Get data length
 	BackdoorRPCCall(&regs, VMW_BACK_RPC_GET_LENGTH, 0);
 
 	if (regs.ecx != VMW_BACK_RPC_GET_L_OK)
 		goto err;
-	
+
 	*length = regs.eax;
-	
+
 	if (*length > buffer_length) {
-		release_sem(backdoor_access);
+		release_sem(fBackdoorAccess);
 		return B_BUFFER_OVERFLOW;
 	}
-	
+
 	reply_id = HIGH_BITS(regs.edx);
-	
+
 	// Get data
 	BackdoorRPCGet(&regs, buffer, *length);
 
 	if (regs.eax != VMW_BACK_RPC_OK)
 		goto err;
-	
+
 	buffer[*length] = '\0';
-	
+
 	// Confirm...
 	BackdoorRPCCall(&regs, VMW_BACK_RPC_ACK, reply_id);
 
 	if (regs.ecx != VMW_BACK_RPC_OK)
 		goto err;
-	
-	release_sem(backdoor_access);
-	
-	return (*length > 0 && buffer[0] == '1' ? B_OK : B_ERROR);
+
+	release_sem(fBackdoorAccess);
+
+	return *length > 0 && buffer[0] == '1' ? B_OK : B_ERROR;
 
 err:
-	release_sem(backdoor_access);
+	release_sem(fBackdoorAccess);
 	return B_ERROR;
 }
+
 
 char*
 VMWCoreBackdoor::GetMessage(size_t* _length)
 {
-	if (!in_vmware) return NULL;
+	if (!fInVMWare)
+		return NULL;
 
-	if (acquire_sem(backdoor_access) != B_OK)
+	if (acquire_sem(fBackdoorAccess) != B_OK)
 		return NULL;
 
 	regs_t regs;
@@ -388,7 +399,7 @@ VMWCoreBackdoor::GetMessage(size_t* _length)
 	BackdoorRPCCall(&regs, VMW_BACK_RPC_GET_LENGTH, 0);
 
 	if (regs.ecx != VMW_BACK_RPC_GET_L_OK) {
-		release_sem(backdoor_access);
+		release_sem(fBackdoorAccess);
 		return NULL;
 	}
 
@@ -403,7 +414,7 @@ VMWCoreBackdoor::GetMessage(size_t* _length)
 	BackdoorRPCGet(&regs, data, length);
 
 	if (regs.eax != VMW_BACK_RPC_OK) {
-		release_sem(backdoor_access);
+		release_sem(fBackdoorAccess);
 		free(data);
 		return NULL;
 	}
@@ -411,7 +422,7 @@ VMWCoreBackdoor::GetMessage(size_t* _length)
 	// Confirm...
 	BackdoorRPCCall(&regs, VMW_BACK_RPC_ACK, reply_id);
 
-	release_sem(backdoor_access);
+	release_sem(fBackdoorAccess);
 
 	if (regs.ecx != VMW_BACK_RPC_OK) {
 		free(data);
@@ -423,12 +434,14 @@ VMWCoreBackdoor::GetMessage(size_t* _length)
 	return data;
 }
 
+
 status_t
 VMWCoreBackdoor::CloseRPCChannel()
 {
-	if (!in_vmware) return B_NOT_ALLOWED;
+	if (!fInVMWare)
+		return B_NOT_ALLOWED;
 
-	if (!rpc_opened)
+	if (!fRPCOpened)
 		return B_ERROR;
 
 	regs_t regs;
@@ -437,7 +450,7 @@ VMWCoreBackdoor::CloseRPCChannel()
 	if (regs.ecx != VMW_BACK_RPC_OK)
 		return B_ERROR;
 
-	rpc_opened = false;
+	fRPCOpened = false;
 
 	return B_OK;
 }

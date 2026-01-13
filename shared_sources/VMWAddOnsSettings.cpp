@@ -1,72 +1,68 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #include "VMWAddOnsSettings.h"
 
 #include <FindDirectory.h>
 #include <Path.h>
 
+
 VMWAddOnsSettings::VMWAddOnsSettings()
 {
 	Reload();
 }
 
+
 VMWAddOnsSettings::VMWAddOnsSettings(node_ref* nref)
 {
 	Reload();
-	settings_file.GetNodeRef(nref);
+	fSettingsFile.GetNodeRef(nref);
 }
 
-VMWAddOnsSettings::~VMWAddOnsSettings()
-{
-}
 
 status_t
 VMWAddOnsSettings::OpenSettings()
 {
-	BPath settings_path;
+	BPath settingsPath;
 
-	find_directory(B_USER_SETTINGS_DIRECTORY, &settings_path);
-	settings_path.Append(SETTINGS_FILE_NAME);
+	find_directory(B_USER_SETTINGS_DIRECTORY, &settingsPath);
+	settingsPath.Append(SETTINGS_FILE_NAME);
 
-	settings_file.SetTo(settings_path.Path(), B_READ_WRITE | B_CREATE_FILE);
+	fSettingsFile.SetTo(settingsPath.Path(), B_READ_WRITE | B_CREATE_FILE);
 
-	return settings_file.InitCheck();
+	return fSettingsFile.InitCheck();
 }
+
 
 void
 VMWAddOnsSettings::Reload()
 {
-	if (OpenSettings() == B_OK) {
-		settings_msg.Unflatten(&settings_file);
-	}
+	if (OpenSettings() == B_OK)
+		fSettingsMsg.Unflatten(&fSettingsFile);
 }
+
 
 bool
-VMWAddOnsSettings::GetBool(const char* name, bool default_value)
+VMWAddOnsSettings::GetBool(const char* name, bool defaultValue)
 {
 	bool value;
-	if (settings_msg.FindBool(name, &value) == B_OK) {
+	if (fSettingsMsg.FindBool(name, &value) == B_OK)
 		return value;
-	}
 
-	return default_value;
+	return defaultValue;
 }
+
 
 void
 VMWAddOnsSettings::SetBool(const char* name, bool value)
 {
-	if (settings_msg.ReplaceBool(name, value) == B_NAME_NOT_FOUND) {
-		settings_msg.AddBool(name, value);
-	}
+	if (fSettingsMsg.ReplaceBool(name, value) == B_NAME_NOT_FOUND)
+		fSettingsMsg.AddBool(name, value);
 
-	if (OpenSettings() == B_OK) {
-		settings_msg.Flatten(&settings_file);
-	}
+	if (OpenSettings() == B_OK)
+		fSettingsMsg.Flatten(&fSettingsFile);
 
-	settings_file.Unset();
+	fSettingsFile.Unset();
 }
-
-

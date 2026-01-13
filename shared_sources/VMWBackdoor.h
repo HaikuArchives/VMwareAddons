@@ -1,9 +1,9 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
-	Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
+ * Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #ifndef VMW_BACK_H
 #define VMW_BACK_H
@@ -22,17 +22,20 @@ public:
 		UNKOWN_SETTING_2	= 0x0800,
 	};
 
-				VMWBackdoor();
-	virtual		~VMWBackdoor();
-
 	status_t	EnableMouseSharing();
 	status_t	DisableMouseSharing();
+
 	status_t	GetCursorPosition(int32& x, int32& y);
-	void		GetCursorStatus(uint16& status, uint16& to_read);
-	status_t	GetHostClipboard(char** text, size_t *text_length);
+	void		GetCursorStatus(uint16& status, uint16& toRead);
+
+	status_t	GetHostClipboard(char** text, size_t* length);
 	status_t	SetHostClipboard(char* text, size_t length);
+
 	bool		GetGUISetting(gui_setting setting);
-	// void		SetGUISetting(gui_setting setting, bool enabled);
+#ifdef SET_GUI_SETTINGS
+	void		SetGUISetting(gui_setting setting, bool enabled);
+#endif
+
 	ulong		GetHostClock();
 };
 

@@ -1,14 +1,15 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
-	Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * Copyright 2010-2011 Joshua Stein <jcs@jcs.org>
+ * Copyright 2018 Gerasim Troeglazov <3dEyes@gmail.com>
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #ifndef VMW_BACK_CORE_H
 #define VMW_BACK_CORE_H
 
-#include <Message.h>
+#include <OS.h>
+#include <SupportDefs.h>
 
 // https://web.archive.org/web/20100610223425/http://chitchat.at.infoseek.co.jp/vmware/backdoor.html
 #define VMW_BACK_MAGIC				0x564D5868UL
@@ -37,12 +38,13 @@
 #define VMW_BACK_GET_GUI_SETTING	0x0D
 #define VMW_BACK_SET_GUI_SETTING	0x0E
 #define VMW_BACK_GET_HOST_TIME		0x17
+// Absolute pointer commands
 #define VMW_BACK_MOUSE_DATA			0x27
 #define VMW_BACK_MOUSE_STATUS		0x28
 #define VMW_BACK_MOUSE_COMMAND		0x29
 
-// Mouse sharing commands
 #define VMW_BACK_MOUSE_VERSION		0x3442554a
+// Sub-commmands to VMW_BACK_MOUSE_COMMAND
 #define VMW_BACK_MOUSE_DISABLE		0x000000f5
 #define VMW_BACK_MOUSE_READ			0x45414552
 #define VMW_BACK_MOUSE_REQ_ABSOLUTE	0x53424152
@@ -52,6 +54,7 @@
 #define LOW_BITS(x) ((x) & 0xFFFF)
 #define TO_HIGH(x) ((x) << 16)
 
+
 typedef struct regs_t {
 	ulong eax;
 	ulong ebx;
@@ -60,6 +63,7 @@ typedef struct regs_t {
 	ulong esi;
 	ulong edi;
 } regs_t;
+
 
 class VMWCoreBackdoor {
 public:
@@ -81,14 +85,14 @@ private:
 	void		BackdoorRPCSend(regs_t* regs, char* data, size_t length);
 	void		BackdoorRPCGet(regs_t* regs, char* data, size_t length);
 
-	bool		in_vmware;
+	bool		fInVMWare;
 
-	bool		rpc_opened;
-	ulong		rpc_channel;
-	ulong		rpc_cookie1;
-	ulong		rpc_cookie2;
+	bool		fRPCOpened;
+	ulong		fRPCChannel;
+	ulong		fRPCCookie1;
+	ulong		fRPCCookie2;
 
-	sem_id		backdoor_access;
+	sem_id		fBackdoorAccess;
 };
 
 #endif
