@@ -12,14 +12,12 @@
 
 class VMWBackdoor : public VMWCoreBackdoor {
 public:
-	// Only listing values still seen on VMware WS 17.x
+	// Only listing values still seen (and used) on VMware WS 17.x
 	enum gui_setting {
 		POINTER_GRAB_UNGRAB	= 0x0003,	// Grab (0x1)/Ungrab(0x2) are combined on newer versions.
 										// VMware-wide preference.
 		CLIP_BOARD_SHARING	= 0x0010,	// per-VM setting.
-		UNKOWN_SETTING_1	= 0x0200,
 		TIME_SYNC			= 0x0400,	// per-VM setting. Only one still used on open_vmware_tools code.
-		UNKOWN_SETTING_2	= 0x0800,
 	};
 
 	status_t	EnableMouseSharing();
