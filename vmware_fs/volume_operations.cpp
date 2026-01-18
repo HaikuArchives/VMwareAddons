@@ -51,6 +51,7 @@ vmwfs_mount(fs_volume *_vol, const char *device, uint32 flags, const char *args,
 status_t
 vmwfs_unmount(fs_volume* volume)
 {
+	put_vnode(volume, root_node->GetInode());
 	delete root_node;
 	delete shared_folders;
 

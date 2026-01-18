@@ -112,7 +112,7 @@ vmwfs_read(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, void* bu
 
 	do {
 		to_read = static_cast<uint32>((*length - read) < IO_SIZE ? *length - read : IO_SIZE);
-		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + read, (uint8*)buffer + read, &to_read, true);
+		ret = shared_folders->ReadFile(*(file_handle*)cookie, pos + read, (uint8*)buffer + read, &to_read);
 		
 		read += to_read;
 	} while(to_read != 0 && read < *length && ret == B_OK); // to_read == 0 means EOF
@@ -134,7 +134,7 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	while (written < *length && ret == B_OK) {
 		uint32 to_write = static_cast<uint32>((*length - written) < IO_SIZE ? *length - written : IO_SIZE);
 		
-		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)buffer + written, &to_write, true);
+		ret = shared_folders->WriteFile(*(file_handle*)cookie, pos + written, (const uint8*)buffer + written, &to_write);
 		written += to_write;
 	}
 
