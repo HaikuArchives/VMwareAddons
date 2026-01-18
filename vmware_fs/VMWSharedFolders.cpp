@@ -143,7 +143,7 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 }
 
 status_t
-VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer, uint32* read_length, bool buffer_is_user)
+VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer, uint32* read_length)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -197,17 +197,9 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 
 	*read_length = returned_length;
 
-	if (buffer_is_user) {
-		if (user_memcpy(read_buffer, rpc_buffer + 14, *read_length) != B_OK) {
-			release_sem(fLock);
-			return B_BAD_ADDRESS;
-		}
-	} else {
-		if (read_buffer == NULL) {
-			release_sem(fLock);
-			return B_BAD_VALUE;
-		}
-		memcpy(read_buffer, rpc_buffer + 14, *read_length);
+	if (user_memcpy(read_buffer, rpc_buffer + 14, *read_length) != B_OK) {
+		release_sem(fLock);
+		return B_BAD_ADDRESS;
 	}
 
 	release_sem(fLock);
@@ -215,7 +207,7 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 }
 
 status_t
-VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write_buffer, uint32* write_length, bool buffer_is_user)
+VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write_buffer, uint32* write_length)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -225,7 +217,6 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	// 4) Offset (64-bits)
 	// 5) Length (32-bits)
 
-	// /!\ should be changed in the constructor, too
 	// /!\ should be changed in the constructor, too
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32 + *write_length;
 
@@ -242,13 +233,12 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	SET_8(pos, 0);
 	SET_64(pos, offset);
 	SET_32(pos, *write_length);
-	if (buffer_is_user) {
-		if (user_memcpy(rpc_buffer + pos, write_buffer, *write_length) != B_OK) {
-			release_sem(fLock);
-			return B_BAD_ADDRESS;
-		}
-	} else
-		memcpy(rpc_buffer + pos, write_buffer, *write_length);
+
+	if (user_memcpy(rpc_buffer + pos, write_buffer, *write_length) != B_OK) {
+		release_sem(fLock);
+		return B_BAD_ADDRESS;
+	}
+
 	pos += *write_length;
 
 	ASSERT(pos == length);
