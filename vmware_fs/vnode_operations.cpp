@@ -187,7 +187,13 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	stat->st_mode = 0;
 	stat->st_mode |= (CAN_READ(attributes) ? S_IRUSR | S_IRGRP | S_IROTH : 0);
 	stat->st_mode |= (CAN_WRITE(attributes) ? S_IWUSR : 0);
-	stat->st_mode |= (CAN_EXEC(attributes) ? S_IXUSR | S_IXGRP | S_IXOTH : 0);
+
+	// Ignore the exec bit for files. VMware sets it for *all* files for shared folders
+	// on a Windows host, which makes double clicking files really annoying in Tracker.
+	// ToDo: turn this into a mount-time option.
+	if (is_dir)
+		stat->st_mode |= (CAN_EXEC(attributes) ? S_IXUSR | S_IXGRP | S_IXOTH : 0);
+
 	stat->st_mode |= (is_dir ? S_IFDIR : S_IFREG);
 
 	stat->st_nlink = 1;
