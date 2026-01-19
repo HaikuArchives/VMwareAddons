@@ -268,3 +268,10 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 
 	return ret;
 }
+
+
+status_t
+vmwfs_fsync(fs_volume* _volume, fs_vnode* _node, bool dataOnly)
+{
+	return B_OK;
+}

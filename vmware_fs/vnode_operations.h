@@ -14,4 +14,6 @@ status_t	vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode);
 status_t	vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat);
 status_t	vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, uint32 statMask);
 
+status_t	vmwfs_fsync(fs_volume* _volume, fs_vnode* _node, bool dataOnly);
+
 #endif

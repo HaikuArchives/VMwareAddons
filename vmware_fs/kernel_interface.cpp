@@ -79,7 +79,7 @@ fs_vnode_ops vnode_ops = {
 	NULL,						//vmwfs_set_flags
 	NULL,						//vmwfs_select
 	NULL,						//vmwfs_deselect
-	NULL,						//vmwfs_fsync
+	&vmwfs_fsync,
 
 	NULL,						//vmwfs_read_symlink
 	NULL,						//vmwfs_create_symlink
@@ -91,7 +91,7 @@ fs_vnode_ops vnode_ops = {
 	&vmwfs_access,
 	&vmwfs_read_stat,
 	&vmwfs_write_stat,
-	NULL,
+	NULL,						// preallocate
 
 	/* file operations */
 	&vmwfs_create,
