@@ -1,113 +1,118 @@
 #include "VMWNode.h"
 
+#include <KernelExport.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <KernelExport.h>
 
-ino_t VMWNode::current_inode = 2;
 
-VMWNode::VMWNode(const char* _name, VMWNode* _parent)
-	: parent(_parent)
+ino_t VMWNode::sCurrentInode = 2;
+
+
+VMWNode::VMWNode(const char* name, VMWNode* parent)
+	:
+	fChildren(NULL),
+	fParent(parent)
 {
-	name = strdup(_name);
-	name_length = strlen(name);
-	inode = current_inode;
-	current_inode++;
-	children = NULL;
+	fName = strdup(name);
+	fNameLength = strlen(fName);
+	fInode = sCurrentInode;
+	sCurrentInode++;
 }
+
 
 VMWNode::~VMWNode()
 {
-	vmw_list_item* item = children;
+	vmw_list_item* item = fChildren;
 	while (item != NULL) {
 		delete item->node;
 
-		vmw_list_item* next_item = item->next;
+		vmw_list_item* nextItem = item->next;
 		free(item);
-		item = next_item;
+		item = nextItem;
 	}
-	free(name);
+	free(fName);
 }
 
+
 ssize_t
-VMWNode::CopyPathTo(char* buffer, size_t buffer_length, const char* to_append)
+VMWNode::CopyPathTo(char* buffer, size_t bufferLength, const char* toAppend)
 {
-	if (parent == NULL) { // This is the root node
-		if (to_append == NULL || to_append[0] == '\0'
-			|| strcmp(to_append, ".") == 0 || strcmp(to_append, "..") == 0) {
-			memset(buffer, 0, buffer_length);
+	if (fParent == NULL) { // This is the root node
+		if (toAppend == NULL || toAppend[0] == '\0' || strcmp(toAppend, ".") == 0
+			|| strcmp(toAppend, "..") == 0) {
+			memset(buffer, 0, bufferLength);
 			return 0;
 		}
 
-		size_t length = strlen(to_append);
+		size_t length = strlen(toAppend);
 
-		if (length >= buffer_length)
+		if (length >= bufferLength)
 			return -1;
 
-		strcpy(buffer, to_append);
+		strcpy(buffer, toAppend);
 		return length;
 	}
 
-	if (to_append != NULL) {
-		if (strcmp(to_append, "..") == 0)
-			return parent->CopyPathTo(buffer, buffer_length);
+	if (toAppend != NULL) {
+		if (strcmp(toAppend, "..") == 0)
+			return fParent->CopyPathTo(buffer, bufferLength);
 
-		if (strcmp(to_append, ".") == 0)
-			to_append = NULL;
+		if (strcmp(toAppend, ".") == 0)
+			toAppend = NULL;
 	}
 
-	ssize_t previous_length = parent->CopyPathTo(buffer, buffer_length);
+	ssize_t previousLength = fParent->CopyPathTo(buffer, bufferLength);
 
-	if (previous_length < 0)
+	if (previousLength < 0)
 		return -1;
 
-	bool append_slash = (previous_length > 0);
+	bool appendSlash = (previousLength > 0);
 
-	size_t new_length = previous_length + (append_slash ? 1 : 0) + name_length;
+	size_t newLength = previousLength + (appendSlash ? 1 : 0) + fNameLength;
 
-	if (to_append != NULL)
-		new_length += strlen(to_append) + 1;
+	if (toAppend != NULL)
+		newLength += strlen(toAppend) + 1;
 
-	if (new_length >= buffer_length) // No space left
+	if (newLength >= bufferLength) // No space left
 		return -1;
 
-	if (append_slash) // Need to add a slash after the previous item
+	if (appendSlash) // Need to add a slash after the previous item
 		strcat(buffer, "/");
 
-	strcat(buffer, name);
+	strcat(buffer, fName);
 
-	if (to_append != NULL) {
+	if (toAppend != NULL) {
 		strcat(buffer, "/");
-		strcat(buffer, to_append);
+		strcat(buffer, toAppend);
 	}
 
-	return new_length;
+	return newLength;
 }
 
 
 void
 VMWNode::DeleteChildIfExists(const char* name)
 {
-	vmw_list_item* item = children;
-	vmw_list_item* prev_item = NULL;
+	vmw_list_item* item = fChildren;
+	vmw_list_item* prevItem = NULL;
 
 	while (item != NULL) {
-		if (strcmp(item->node->name, name) == 0) {
+		if (strcmp(item->node->fName, name) == 0) {
 			delete item->node;
 
-			if (prev_item == NULL)
-				children = item->next;
+			if (prevItem == NULL)
+				fChildren = item->next;
 			else
-				prev_item->next = item->next;
+				prevItem->next = item->next;
 
 			free(item);
 			return;
-
 		}
-		prev_item = item;
+		prevItem = item;
 		item = item->next;
 	}
 }
+
 
 VMWNode*
 VMWNode::GetChild(const char* name)
@@ -116,12 +121,12 @@ VMWNode::GetChild(const char* name)
 		return this;
 
 	if (strcmp(name, "..") == 0)
-		return (parent == NULL ? this : parent);
+		return fParent == NULL ? this : fParent;
 
-	vmw_list_item* item = children;
+	vmw_list_item* item = fChildren;
 
 	while (item != NULL) {
-		if (strcmp(item->node->name, name) == 0)
+		if (strcmp(item->node->fName, name) == 0)
 			return item->node;
 
 		if (item->next == NULL)
@@ -130,36 +135,37 @@ VMWNode::GetChild(const char* name)
 		item = item->next;
 	}
 
-	vmw_list_item* new_item = (vmw_list_item*)malloc(sizeof(vmw_list_item));
+	vmw_list_item* newItem = (vmw_list_item*)malloc(sizeof(vmw_list_item));
 
-	if (new_item == NULL)
+	if (newItem == NULL)
 		return NULL;
 
-	new_item->next = NULL;
-	new_item->node = new VMWNode(name, this);
-	if (new_item->node == NULL) {
-		free(new_item);
+	newItem->next = NULL;
+	newItem->node = new VMWNode(name, this);
+	if (newItem->node == NULL) {
+		free(newItem);
 		return NULL;
 	}
 
 	if (item == NULL)
-		children = new_item;
+		fChildren = newItem;
 	else
-		item->next = new_item;
+		item->next = newItem;
 
-	return new_item->node;
+	return newItem->node;
 }
 
+
 VMWNode*
-VMWNode::GetChild(ino_t _inode)
+VMWNode::GetChild(ino_t inode)
 {
-	if (this->inode == _inode)
+	if (this->fInode == inode)
 		return this;
 
-	vmw_list_item* item = children;
+	vmw_list_item* item = fChildren;
 
 	while (item != NULL) {
-		VMWNode* node = item->node->GetChild(_inode);
+		VMWNode* node = item->node->GetChild(inode);
 		if (node != NULL)
 			return node;
 
@@ -168,4 +174,3 @@ VMWNode::GetChild(ino_t _inode)
 
 	return NULL;
 }
-

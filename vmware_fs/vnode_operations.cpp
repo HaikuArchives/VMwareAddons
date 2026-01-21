@@ -1,34 +1,30 @@
-#include <sys/stat.h>
-#include <stdlib.h>
-
-#include <fs_interface.h>
-
 #include "vmwfs.h"
+
 
 #define TO_UNIX_TIME(x) ((x) / 10000000LL - 11644473600LL)
 #define TO_VMW_TIME(x) ((x) + 11644473600LL) * 10000000LL
 
+
 status_t
 vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 {
-	VMWNode* dir_node = (VMWNode*)dir->private_node;
-
-	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	if (path_buffer == NULL)
+	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
-	ssize_t length = dir_node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
+	VMWNode* dirNode = (VMWNode*)dir->private_node;
+	ssize_t length = dirNode->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH, name);
 	if (length < 0) {
-		free(path_buffer);
+		free(pathBuffer);
 		return B_BUFFER_OVERFLOW;
 	}
 
-	status_t ret = shared_folders->GetAttributes(path_buffer);
-	free(path_buffer);
-	if (ret != B_OK)
-		return ret;
+	status_t status = gSharedFolders->GetAttributes(pathBuffer);
+	free(pathBuffer);
+	if (status != B_OK)
+		return status;
 
-	VMWNode* node = dir_node->GetChild(name);
+	VMWNode* node = dirNode->GetChild(name);
 	if (node == NULL)
 		return B_NO_MEMORY;
 
@@ -36,6 +32,7 @@ vmwfs_lookup(fs_volume* volume, fs_vnode* dir, const char* name, ino_t* _id)
 
 	return get_vnode(volume, node->GetInode(), NULL);
 }
+
 
 status_t
 vmwfs_get_vnode_name(fs_volume* volume, fs_vnode* vnode, char* buffer, size_t bufferSize)
@@ -47,23 +44,24 @@ vmwfs_get_vnode_name(fs_volume* volume, fs_vnode* vnode, char* buffer, size_t bu
 	return B_OK;
 }
 
+
 status_t
 vmwfs_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 {
 	return B_OK;
 }
 
+
 status_t
 vmwfs_remove_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 {
 	VMWNode* node = (VMWNode*)vnode->private_node;
-	VMWNode* parent = node->GetChild("..");
-
 	char* name = strdup(node->GetName());
 
 	if (name == NULL)
 		return B_NO_MEMORY;
 
+	VMWNode* parent = node->GetChild("..");
 	parent->DeleteChildIfExists(name);
 
 	free(name);
@@ -71,117 +69,119 @@ vmwfs_remove_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
 	return B_OK;
 }
 
+
 status_t
 vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 {
-	VMWNode* node = (VMWNode*)dir->private_node;
-
-	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	if (path_buffer == NULL)
+	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
-	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, name);
+	VMWNode* node = (VMWNode*)dir->private_node;
+	ssize_t length = node->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH, name);
 	if (length < 0) {
-		free(path_buffer);
+		free(pathBuffer);
 		return B_BUFFER_OVERFLOW;
 	}
 
-	status_t ret = shared_folders->DeleteFile(path_buffer);
-	free(path_buffer);
+	status_t status = gSharedFolders->DeleteFile(pathBuffer);
+	free(pathBuffer);
 
-	return ret;
+	return status;
 }
+
 
 status_t
-vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnode* toDir, const char* toName)
+vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnode* toDir,
+	const char* toName)
 {
-	VMWNode* src_dir = (VMWNode*)fromDir->private_node;
-	VMWNode* dst_dir = (VMWNode*)toDir->private_node;
-
-	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	char* path_buffer_dest = (char*)malloc(B_PATH_NAME_LENGTH);
-	if (path_buffer == NULL || path_buffer_dest == NULL) {
-		free(path_buffer);
-		free(path_buffer_dest);
+	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	char* pathBufferDest = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (pathBuffer == NULL || pathBufferDest == NULL) {
+		free(pathBuffer);
+		free(pathBufferDest);
 		return B_NO_MEMORY;
 	}
 
-	ssize_t length = src_dir->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH, fromName);
+	VMWNode* srcDir = (VMWNode*)fromDir->private_node;
+	ssize_t length = srcDir->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH, fromName);
 	if (length < 0) {
-		free(path_buffer);
-		free(path_buffer_dest);
+		free(pathBuffer);
+		free(pathBufferDest);
 		return B_BUFFER_OVERFLOW;
 	}
 
 
-	length = dst_dir->CopyPathTo(path_buffer_dest, B_PATH_NAME_LENGTH, toName);
+	VMWNode* dstDir = (VMWNode*)toDir->private_node;
+	length = dstDir->CopyPathTo(pathBufferDest, B_PATH_NAME_LENGTH, toName);
 	if (length < 0) {
-		free(path_buffer);
-		free(path_buffer_dest);
+		free(pathBuffer);
+		free(pathBufferDest);
 		return B_BUFFER_OVERFLOW;
 	}
 
-	status_t ret = shared_folders->Move(path_buffer, path_buffer_dest);
-	free(path_buffer);
-	free(path_buffer_dest);
+	status_t status = gSharedFolders->Move(pathBuffer, pathBufferDest);
+	free(pathBuffer);
+	free(pathBufferDest);
 
-	return ret;
+	return status;
 }
+
 
 status_t
 vmwfs_access(fs_volume* volume, fs_vnode* vnode, int mode)
 {
-	VMWNode* node = (VMWNode*)vnode->private_node;
-
-	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	if (path_buffer == NULL)
+	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
-	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	VMWNode* node = (VMWNode*)vnode->private_node;
+	ssize_t length = node->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH);
 	if (length < 0) {
-		free(path_buffer);
+		free(pathBuffer);
 		return B_BUFFER_OVERFLOW;
 	}
 
 	vmw_attributes attributes;
-	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes);
-	free(path_buffer);
+	status_t status = gSharedFolders->GetAttributes(pathBuffer, &attributes);
+	free(pathBuffer);
 
-	if (ret != B_OK)
-		return ret;
+	if (status != B_OK)
+		return status;
 
 	if (((mode & R_OK) == R_OK && !CAN_READ(attributes))
 		|| ((mode & W_OK) == W_OK && !CAN_WRITE(attributes))
-			|| ((mode & X_OK) == X_OK && !CAN_EXEC(attributes)))
+		|| ((mode & X_OK) == X_OK && !CAN_EXEC(attributes))) {
 		return B_PERMISSION_DENIED;
+	}
 
 	return B_OK;
 }
 
+
 status_t
 vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 {
-	VMWNode* node = (VMWNode*)vnode->private_node;
-
-	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	if (path_buffer == NULL)
+	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
-	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	VMWNode* node = (VMWNode*)vnode->private_node;
+	ssize_t length = node->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH);
 	if (length < 0) {
-		free(path_buffer);
+		free(pathBuffer);
 		return B_BUFFER_OVERFLOW;
 	}
 
 	vmw_attributes attributes;
-	bool is_dir;
-	status_t ret = shared_folders->GetAttributes(path_buffer, &attributes, &is_dir);
-	free(path_buffer);
+	bool isDir;
+	status_t status = gSharedFolders->GetAttributes(pathBuffer, &attributes, &isDir);
+	free(pathBuffer);
 
-	if (ret != B_OK)
-		return ret;
+	if (status != B_OK)
+		return status;
 
-	stat->st_dev = device_id;
+	stat->st_dev = gDeviceId;
 	stat->st_ino = node->GetInode();
 
 	stat->st_mode = 0;
@@ -191,17 +191,17 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	// Ignore the exec bit for files. VMware sets it for *all* files for shared folders
 	// on a Windows host, which makes double clicking files really annoying in Tracker.
 	// ToDo: turn this into a mount-time option.
-	if (is_dir)
+	if (isDir)
 		stat->st_mode |= (CAN_EXEC(attributes) ? S_IXUSR | S_IXGRP | S_IXOTH : 0);
 
-	stat->st_mode |= (is_dir ? S_IFDIR : S_IFREG);
+	stat->st_mode |= (isDir ? S_IFDIR : S_IFREG);
 
 	stat->st_nlink = 1;
 	stat->st_uid = 0;
 	stat->st_gid = 0;
 
 	// VMware seems to calculate (in a strange way) directory sizes, but this is not needed
-	stat->st_size = (is_dir ? 0 : attributes.size);
+	stat->st_size = (isDir ? 0 : attributes.size);
 	stat->st_blocks = stat->st_size / FAKE_BLOCK_SIZE;
 	if (stat->st_size % FAKE_BLOCK_SIZE != 0)
 		stat->st_blocks++;
@@ -219,8 +219,9 @@ vmwfs_read_stat(fs_volume* volume, fs_vnode* vnode, struct stat* stat)
 	return B_NO_ERROR;
 }
 
-// TODO : This enum was taken from haiku/headers/build/os/drivers/fs_interface.h, find where it is defined
-// in the bundled headers.
+
+// TODO : This enum was taken from haiku/headers/build/os/drivers/fs_interface.h, find where it is
+// defined in the bundled headers.
 enum write_stat_mask {
 	FS_WRITE_STAT_MODE		= 0x0001,
 	FS_WRITE_STAT_UID		= 0x0002,
@@ -232,18 +233,18 @@ enum write_stat_mask {
 	FS_WRITE_STAT_CTIME		= 0x0080
 };
 
+
 status_t
 vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, uint32 statMask)
 {
-	VMWNode* node = (VMWNode*)vnode->private_node;
-
-	char* path_buffer = (char*)malloc(B_PATH_NAME_LENGTH);
-	if (path_buffer == NULL)
+	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
+	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
-	ssize_t length = node->CopyPathTo(path_buffer, B_PATH_NAME_LENGTH);
+	VMWNode* node = (VMWNode*)vnode->private_node;
+	ssize_t length = node->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH);
 	if (length < 0) {
-		free(path_buffer);
+		free(pathBuffer);
 		return B_BUFFER_OVERFLOW;
 	}
 
@@ -269,10 +270,10 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	mask |= ((statMask & FS_WRITE_STAT_CRTIME) == FS_WRITE_STAT_CRTIME ? VMW_SET_CRTIME : 0);
 	mask |= ((statMask & FS_WRITE_STAT_CTIME) == FS_WRITE_STAT_CTIME ? VMW_SET_CTIME : 0);
 
-	status_t ret = shared_folders->SetAttributes(path_buffer, &attributes, mask);
-	free(path_buffer);
+	status_t status = gSharedFolders->SetAttributes(pathBuffer, &attributes, mask);
+	free(pathBuffer);
 
-	return ret;
+	return status;
 }
 
 

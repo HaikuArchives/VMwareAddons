@@ -1,18 +1,16 @@
 /*
-	Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
-	All rights reserved. Distributed under the terms of the MIT License.
-*/
+ * Copyright 2009 Vincent Duvert, vincent.duvert@free.fr
+ * All rights reserved. Distributed under the terms of the MIT License.
+ */
 
 #include "VMWSharedFolders.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-
-#define ASSERT(x) if (!(x)) panic("ASSERT FAILED : " #x);
 
 #include <KernelExport.h>
+
+
+#define ASSERT(x) if (!(x)) panic("ASSERT FAILED : " #x);
 
 enum {
 	VMW_CMD_OPEN_FILE = 0,
@@ -30,57 +28,58 @@ enum {
 	VMW_CMD_MOVE_FILE
 };
 
-#define SET_8(offset, val) *(uint8*)(rpc_buffer + offset) = (uint8)val; offset += 1
-#define SET_32(offset, val) *(uint32*)(rpc_buffer + offset) = (uint32)val; offset += 4
-#define SET_64(offset, val) *(uint64*)(rpc_buffer + offset) = (uint64)val; offset += 8
+#define SET_8(offset, val) *(uint8*)(fRPCBuffer + offset) = (uint8)val; offset += 1
+#define SET_32(offset, val) *(uint32*)(fRPCBuffer + offset) = (uint32)val; offset += 4
+#define SET_64(offset, val) *(uint64*)(fRPCBuffer + offset) = (uint64)val; offset += 8
 
 #define SIZE_8 1
 #define SIZE_32 4
 #define SIZE_64 8
 #define SIZE_START 6
 
-VMWSharedFolders::VMWSharedFolders(size_t max_io_size)
+
+VMWSharedFolders::VMWSharedFolders(size_t maxIOSize)
 {
-	if (!backdoor.InVMware()) {
-		init_check = B_UNSUPPORTED;
+	if (!fBackdoor.InVMware()) {
+		fInitCheck = B_UNSUPPORTED;
 		return;
 	}
 
-	init_check = backdoor.OpenRPCChannel();
-
-	if (init_check != B_OK)
+	fInitCheck = fBackdoor.OpenRPCChannel();
+	if (fInitCheck != B_OK)
 		return;
 
-	init_check = backdoor.SendMessage("f ", true);
-
-	if (init_check != B_OK)
+	fInitCheck = fBackdoor.SendMessage("f ", true);
+	if (fInitCheck != B_OK)
 		return;
 
-	// max_io_size indicates the max buffer size used with ReadFile and WriteFile.
+	// maxIOSize indicates the max buffer size used with ReadFile and WriteFile.
 	// We need additional room on the send/receive buffer for the command header.
-	rpc_buffer_size = max_io_size + SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32;
-	rpc_buffer = (char*)malloc(rpc_buffer_size);
-	if (rpc_buffer == NULL) {
-		init_check = B_NO_MEMORY;
+	fRPCBufferSize = maxIOSize + SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32;
+	fRPCBuffer = (char*)malloc(fRPCBufferSize);
+	if (fRPCBuffer == NULL) {
+		fInitCheck = B_NO_MEMORY;
 		return;
 	}
-	
+
 	fLock = create_sem(1, "vmwfs_lock");
 	if (fLock < B_OK) {
-		free(rpc_buffer);
-		init_check = fLock;
+		free(fRPCBuffer);
+		fInitCheck = fLock;
 	}
 }
+
 
 VMWSharedFolders::~VMWSharedFolders()
 {
 	delete_sem(fLock);
-	free(rpc_buffer);
-	backdoor.CloseRPCChannel();
+	free(fRPCBuffer);
+	fBackdoor.CloseRPCChannel();
 }
 
+
 status_t
-VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
+VMWSharedFolders::OpenFile(const char* path, int openMode, file_handle* handle)
 {
 	// Command string :
 	// 0) Magic value (6 bytes)
@@ -91,10 +90,10 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 	// 5) The path length, with ending null (32-bits)
 	// 6) The path itself (with / path delimiters replaced by null characters)
 
-	const size_t path_length = strlen(path);
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
+	const size_t pathLength = strlen(path);
+	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_32 + pathLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -102,32 +101,31 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 
 	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_OPEN_FILE);
-	SET_32(pos, open_mode & 3);
+	SET_32(pos, openMode & 3);
 
-	uint32 vmw_openmode;
-	if ((open_mode & O_TRUNC) == O_TRUNC) {
-		vmw_openmode = 0x04;
-	} else if ((open_mode & O_CREAT) == O_CREAT) {
-		if ((open_mode & O_EXCL) == O_EXCL)
-			vmw_openmode = 0x03;
+	uint32 vmwOpenMode;
+	if ((openMode & O_TRUNC) == O_TRUNC)
+		vmwOpenMode = 0x04;
+	else if ((openMode & O_CREAT) == O_CREAT)
+		if ((openMode & O_EXCL) == O_EXCL)
+			vmwOpenMode = 0x03;
 		else
-			vmw_openmode = 0x02;
-	} else {
-		vmw_openmode = 0;
-	}
+			vmwOpenMode = 0x02;
+	else
+		vmwOpenMode = 0;
 
-	SET_32(pos, vmw_openmode);
+	SET_32(pos, vmwOpenMode);
 	SET_8(pos, 0x06);
-	SET_32(pos, path_length);
+	SET_32(pos, pathLength);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 14) {
@@ -135,15 +133,16 @@ VMWSharedFolders::OpenFile(const char* path, int open_mode, file_handle* handle)
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
-	*handle = *(uint32*)(rpc_buffer + 10);
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
+	*handle = *(uint32*)(fRPCBuffer + 10);
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
 
+
 status_t
-VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer, uint32* read_length)
+VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* readBuffer, uint32* readLength)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -154,8 +153,8 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 
 	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_64 + SIZE_32;
 
-	ASSERT(*read_length + length <= rpc_buffer_size);
-	if (*read_length + length > rpc_buffer_size)
+	ASSERT(*readLength + length <= fRPCBufferSize);
+	if (*readLength + length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -165,16 +164,16 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 	SET_32(pos, VMW_CMD_READ_FILE);
 	SET_32(pos, handle);
 	SET_64(pos, offset);
-	uint32 max_length = *read_length;
-	SET_32(pos, *read_length);
+	uint32 maxLength = *readLength;
+	SET_32(pos, *readLength);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length < 14) {
@@ -182,32 +181,34 @@ VMWSharedFolders::ReadFile(file_handle handle, uint64 offset, void* read_buffer,
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
-	uint32 returned_length = *(uint32*)(rpc_buffer + 10);
-	if (returned_length > max_length) {
+	uint32 returnedLength = *(uint32*)(fRPCBuffer + 10);
+	if (returnedLength > maxLength) {
 		release_sem(fLock);
 		return B_BUFFER_OVERFLOW;
 	}
 
-	*read_length = returned_length;
+	*readLength = returnedLength;
 
-	if (user_memcpy(read_buffer, rpc_buffer + 14, *read_length) != B_OK) {
+	if (user_memcpy(readBuffer, fRPCBuffer + 14, *readLength) != B_OK) {
 		release_sem(fLock);
 		return B_BAD_ADDRESS;
 	}
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
 
+
 status_t
-VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write_buffer, uint32* write_length)
+VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* writeBuffer,
+	uint32* writeLength)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -218,10 +219,10 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	// 5) Length (32-bits)
 
 	// /!\ should be changed in the constructor, too
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32 + *write_length;
+	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + SIZE_64 + SIZE_32 + *writeLength;
 
-	ASSERT(length <= rpc_buffer_size);
-	if (length > rpc_buffer_size)
+	ASSERT(length <= fRPCBufferSize);
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -232,22 +233,22 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 	SET_32(pos, handle);
 	SET_8(pos, 0);
 	SET_64(pos, offset);
-	SET_32(pos, *write_length);
+	SET_32(pos, *writeLength);
 
-	if (user_memcpy(rpc_buffer + pos, write_buffer, *write_length) != B_OK) {
+	if (user_memcpy(fRPCBuffer + pos, writeBuffer, *writeLength) != B_OK) {
 		release_sem(fLock);
 		return B_BAD_ADDRESS;
 	}
 
-	pos += *write_length;
+	pos += *writeLength;
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 14) {
@@ -255,12 +256,13 @@ VMWSharedFolders::WriteFile(file_handle handle, uint64 offset, const void* write
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
-	*write_length = *(uint32*)(rpc_buffer + 10);
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
+	*writeLength = *(uint32*)(fRPCBuffer + 10);
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
+
 
 status_t
 VMWSharedFolders::CloseFile(file_handle handle)
@@ -281,11 +283,12 @@ VMWSharedFolders::CloseFile(file_handle handle)
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
+
 
 status_t
 VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
@@ -296,10 +299,10 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 	// 2) Path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 
-	const size_t path_length = strlen(path);
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
+	const size_t pathLength = strlen(path);
+	size_t length = SIZE_START + SIZE_32 + SIZE_32 + pathLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -307,16 +310,16 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 
 	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_OPEN_DIR);
-	SET_32(pos, path_length);
+	SET_32(pos, pathLength);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 14) {
@@ -324,15 +327,16 @@ VMWSharedFolders::OpenDir(const char* path, folder_handle* handle)
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
-	*handle = *(uint32*)(rpc_buffer + 10);
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
+	*handle = *(uint32*)(fRPCBuffer + 10);
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
 
+
 status_t
-VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t max_length)
+VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t maxLength)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -352,11 +356,11 @@ VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length < 59) {
@@ -364,23 +368,24 @@ VMWSharedFolders::ReadDir(folder_handle handle, uint32 index, char* name, size_t
 		return B_ERROR;
 	}
 
-	size_t name_length = *(uint32*)(rpc_buffer + 55);
-	if (name_length == 0) {
+	size_t nameLength = *(uint32*)(fRPCBuffer + 55);
+	if (nameLength == 0) {
 		release_sem(fLock);
 		return B_ENTRY_NOT_FOUND;
 	}
 
-	if (name_length > max_length - 1) {
+	if (nameLength > maxLength - 1) {
 		release_sem(fLock);
 		return B_BUFFER_OVERFLOW;
 	}
 
-	strncpy(name, rpc_buffer + 59, max_length - 1);
-	name[name_length] = '\0';
+	strncpy(name, fRPCBuffer + 59, maxLength - 1);
+	name[nameLength] = '\0';
 
 	release_sem(fLock);
 	return B_OK;
 }
+
 
 status_t
 VMWSharedFolders::CloseDir(folder_handle handle)
@@ -401,13 +406,14 @@ VMWSharedFolders::CloseDir(folder_handle handle)
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 	release_sem(fLock);
-	return ret;
+	return status;
 }
 
+
 status_t
-VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bool* is_dir)
+VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bool* isDir)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -415,10 +421,10 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 	// 2) Path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 
-	const size_t path_length = strlen(path);
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
+	const size_t pathLength = strlen(path);
+	size_t length = SIZE_START + SIZE_32 + SIZE_32 + pathLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -426,16 +432,16 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 
 	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_GET_ATTR);
-	SET_32(pos, path_length);
+	SET_32(pos, pathLength);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length == 10) {
@@ -448,22 +454,23 @@ VMWSharedFolders::GetAttributes(const char* path, vmw_attributes* attributes, bo
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
-	if (is_dir != NULL)
-		*is_dir = (*(uint32*)(rpc_buffer + 10) == 0 ? false : true);
+	if (isDir != NULL)
+		*isDir = (*(uint32*)(fRPCBuffer + 10) == 0 ? false : true);
 
 	if (attributes != NULL)
-		memcpy(attributes, rpc_buffer + 14, sizeof(vmw_attributes));
+		memcpy(attributes, fRPCBuffer + 14, sizeof(vmw_attributes));
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
+
 
 status_t
 VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attributes, uint32 mask)
@@ -477,10 +484,11 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 	// 5) Path length (32-bits)
 	// 6) The path itself (with / path delimiters replaced by null characters)
 
-	const size_t path_length = strlen(path);
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + sizeof(vmw_attributes) + SIZE_32 + path_length + 1;
+	const size_t pathLength = strlen(path);
+	size_t length = SIZE_START + SIZE_32 + SIZE_32 + SIZE_8 + sizeof(vmw_attributes) + SIZE_32
+		+ pathLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -490,18 +498,18 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 	SET_32(pos, VMW_CMD_SET_ATTR);
 	SET_32(pos, mask);
 	SET_8(pos, 0);
-	memcpy(rpc_buffer + pos, attributes, sizeof(vmw_attributes));
+	memcpy(fRPCBuffer + pos, attributes, sizeof(vmw_attributes));
 	pos += sizeof(vmw_attributes);
-	SET_32(pos, path_length);
+	SET_32(pos, pathLength);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 10) {
@@ -509,11 +517,12 @@ VMWSharedFolders::SetAttributes(const char* path, const vmw_attributes* attribut
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
+
 
 status_t
 VMWSharedFolders::CreateDir(const char* path, uint8 mode)
@@ -525,10 +534,10 @@ VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 	// 3) Path length (32-bits)
 	// 4) The path itself (with / path delimiters replaced by null characters)
 
-	const size_t path_length = strlen(path);
-	size_t length = SIZE_START + SIZE_32 + SIZE_8 + SIZE_32 + path_length + 1;
+	const size_t pathLength = strlen(path);
+	size_t length = SIZE_START + SIZE_32 + SIZE_8 + SIZE_32 + pathLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -539,16 +548,16 @@ VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 	SET_32(pos, 0);
 	pos -= SIZE_32;
 	SET_8(pos, mode);
-	SET_32(pos, path_length);
+	SET_32(pos, pathLength);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 10) {
@@ -556,14 +565,15 @@ VMWSharedFolders::CreateDir(const char* path, uint8 mode)
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
 
+
 status_t
-VMWSharedFolders::Delete(const char* path, bool is_dir)
+VMWSharedFolders::Delete(const char* path, bool isDir)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -571,27 +581,27 @@ VMWSharedFolders::Delete(const char* path, bool is_dir)
 	// 2) Path length (32-bits)
 	// 3) The path itself (with / path delimiters replaced by null characters)
 
-	const size_t path_length = strlen(path);
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_length + 1;
+	const size_t pathLength = strlen(path);
+	size_t length = SIZE_START + SIZE_32 + SIZE_32 + pathLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
 		return B_ERROR;
 
 	size_t pos = StartCommand();
-	SET_32(pos, (is_dir ? VMW_CMD_DEL_DIR : VMW_CMD_DEL_FILE));
-	SET_32(pos, path_length);
+	SET_32(pos, isDir ? VMW_CMD_DEL_DIR : VMW_CMD_DEL_FILE);
+	SET_32(pos, pathLength);
 	CopyPath(path, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 10) {
@@ -599,11 +609,12 @@ VMWSharedFolders::Delete(const char* path, bool is_dir)
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
 
 	release_sem(fLock);
-	return ret;
+	return status;
 }
+
 
 status_t
 VMWSharedFolders::DeleteFile(const char* path)
@@ -611,14 +622,16 @@ VMWSharedFolders::DeleteFile(const char* path)
 	return Delete(path, false);
 }
 
+
 status_t
 VMWSharedFolders::DeleteDir(const char* path)
 {
 	return Delete(path, true);
 }
 
+
 status_t
-VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
+VMWSharedFolders::Move(const char* pathOrig, const char* pathDest)
 {
 	// Command string :
 	// 0) Magic value (6 bytes, in BuildCommand)
@@ -629,12 +642,12 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 	// 5) The path itself (with / path delimiters replaced by null characters)
 
 
-	const size_t path_orig_length = strlen(path_orig);
-	const size_t path_dest_length = strlen(path_dest);
-	size_t length = SIZE_START + SIZE_32 + SIZE_32 + path_orig_length + 1 \
-		+ SIZE_32 + path_dest_length + 1;
+	const size_t pathOrigLength = strlen(pathOrig);
+	const size_t pathDestLength = strlen(pathDest);
+	size_t length
+		= SIZE_START + SIZE_32 + SIZE_32 + pathOrigLength + 1 + SIZE_32 + pathDestLength + 1;
 
-	if (length > rpc_buffer_size)
+	if (length > fRPCBufferSize)
 		return B_BUFFER_OVERFLOW;
 
 	if (acquire_sem(fLock) != B_OK)
@@ -642,18 +655,18 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 
 	size_t pos = StartCommand();
 	SET_32(pos, VMW_CMD_MOVE_FILE);
-	SET_32(pos, path_orig_length);
-	CopyPath(path_orig, &pos);
-	SET_32(pos, path_dest_length);
-	CopyPath(path_dest, &pos);
+	SET_32(pos, pathOrigLength);
+	CopyPath(pathOrig, &pos);
+	SET_32(pos, pathDestLength);
+	CopyPath(pathDest, &pos);
 
 	ASSERT(pos == length);
 
-	status_t ret = backdoor.SendAndGet(rpc_buffer, &length, rpc_buffer_size);
+	status_t status = fBackdoor.SendAndGet(fRPCBuffer, &length, fRPCBufferSize);
 
-	if (ret != B_OK) {
+	if (status != B_OK) {
 		release_sem(fLock);
-		return ret;
+		return status;
 	}
 
 	if (length != 10) {
@@ -661,20 +674,22 @@ VMWSharedFolders::Move(const char* path_orig, const char* path_dest)
 		return B_ERROR;
 	}
 
-	ret = ConvertStatus(*(uint32*)(rpc_buffer + 6));
+	status = ConvertStatus(*(uint32*)(fRPCBuffer + 6));
 	release_sem(fLock);
-	return ret;
+	return status;
 }
+
 
 size_t
 VMWSharedFolders::StartCommand()
 {
-	const char start_bytes[] = { 'f', ' ', '\0', '\0', '\0', '\0' };
+	const char startBytes[] = { 'f', ' ', '\0', '\0', '\0', '\0' };
 
-	memcpy(rpc_buffer, start_bytes, sizeof(start_bytes));
+	memcpy(fRPCBuffer, startBytes, sizeof(startBytes));
 
-	return sizeof(start_bytes);
+	return sizeof(startBytes);
 }
+
 
 status_t
 VMWSharedFolders::ConvertStatus(int vmw_status)
@@ -692,14 +707,14 @@ VMWSharedFolders::ConvertStatus(int vmw_status)
 		default:
 			dprintf("ConvertStatus: unknown status %d.\n", vmw_status);
 			return B_ERROR;
-
 	}
 }
+
 
 void
 VMWSharedFolders::CopyPath(const char* path, size_t* pos)
 {
-	char* dest = rpc_buffer + *pos;
+	char* dest = fRPCBuffer + *pos;
 	while (*path != '\0') {
 		*dest = (*path == '/' ? '\0' : *path);
 		dest++;
