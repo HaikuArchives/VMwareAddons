@@ -84,9 +84,12 @@ vmwfs_unlink(fs_volume* volume, fs_vnode* dir, const char* name)
 		return B_BUFFER_OVERFLOW;
 	}
 
+	ino_t inode = node->GetChild(name)->GetInode();
+
 	status_t status = gSharedFolders->DeleteFile(pathBuffer);
 	free(pathBuffer);
 
+	notify_entry_removed(volume->id, node->GetInode(), name, inode);
 	return status;
 }
 
@@ -111,7 +114,6 @@ vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnod
 		return B_BUFFER_OVERFLOW;
 	}
 
-
 	VMWNode* dstDir = (VMWNode*)toDir->private_node;
 	length = dstDir->CopyPathTo(pathBufferDest, B_PATH_NAME_LENGTH, toName);
 	if (length < 0) {
@@ -120,10 +122,13 @@ vmwfs_rename(fs_volume* volume, fs_vnode* fromDir, const char* fromName, fs_vnod
 		return B_BUFFER_OVERFLOW;
 	}
 
+	ino_t inode = srcDir->GetChild(fromName)->GetInode();
+
 	status_t status = gSharedFolders->Move(pathBuffer, pathBufferDest);
 	free(pathBuffer);
 	free(pathBufferDest);
 
+	notify_entry_moved(volume->id, srcDir->GetInode(), fromName, dstDir->GetInode(), toName, inode);
 	return status;
 }
 
@@ -273,6 +278,7 @@ vmwfs_write_stat(fs_volume* volume, fs_vnode* vnode, const struct stat* stat, ui
 	status_t status = gSharedFolders->SetAttributes(pathBuffer, &attributes, mask);
 	free(pathBuffer);
 
+	notify_stat_changed(volume->id, node->GetParent()->GetInode(), node->GetInode(), mask);
 	return status;
 }
 

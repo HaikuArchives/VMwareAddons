@@ -26,6 +26,7 @@ public:
 	VMWNode*		GetChild(ino_t inode);
 	ino_t			GetInode() const { return fInode; }
 	const char*		GetName() const { return fName; }
+	VMWNode*		GetParent() const { return fParent; }
 
 private:
 	static ino_t	sCurrentInode;

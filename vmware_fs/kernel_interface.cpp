@@ -62,7 +62,6 @@ fs_vnode_ops gVnodeOps = {
 	// vnode operations
 	&vmwfs_lookup,
 	NULL,					// vmwfs_get_vnode_name
-
 	&vmwfs_put_vnode,
 	&vmwfs_remove_vnode,
 
