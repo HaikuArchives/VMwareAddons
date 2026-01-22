@@ -1,17 +1,20 @@
+#include <NodeMonitor.h>
+
 #include "vmwfs.h"
 
+static bigtime_t gLastNotification = 0;
+const static bigtime_t kInodeNotificationInterval = 1000000;
 
 status_t
 vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, int /*permissions*/,
 	void** _cookie, ino_t* _newVnodeID)
 {
-	VMWNode* node = (VMWNode*)dir->private_node;
-
 	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
 	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
-	ssize_t length = node->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH, name);
+	VMWNode* dirNode = (VMWNode*)dir->private_node;
+	ssize_t length = dirNode->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH, name);
 	if (length < 0) {
 		free(pathBuffer);
 		return B_BUFFER_OVERFLOW;
@@ -33,12 +36,13 @@ vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, i
 
 	*_cookie = cookie;
 
-	VMWNode* newNode = node->GetChild(name);
+	VMWNode* newNode = dirNode->GetChild(name);
 	if (newNode == NULL)
 		return B_NO_MEMORY;
 
 	*_newVnodeID = newNode->GetInode();
 
+	notify_entry_created(volume->id, dirNode->GetInode(), name, *_newVnodeID);
 	return get_vnode(volume, newNode->GetInode(), NULL);
 }
 
@@ -46,12 +50,11 @@ vmwfs_create(fs_volume* volume, fs_vnode* dir, const char* name, int openMode, i
 status_t
 vmwfs_open(fs_volume* volume, fs_vnode* vnode, int openMode, void** _cookie)
 {
-	VMWNode* node = (VMWNode*)vnode->private_node;
-
 	char* pathBuffer = (char*)malloc(B_PATH_NAME_LENGTH);
 	if (pathBuffer == NULL)
 		return B_NO_MEMORY;
 
+	VMWNode* node = (VMWNode*)vnode->private_node;
 	ssize_t length = node->CopyPathTo(pathBuffer, B_PATH_NAME_LENGTH);
 	if (length < 0) {
 		free(pathBuffer);
@@ -148,6 +151,13 @@ vmwfs_write(fs_volume* volume, fs_vnode* vnode, void* cookie, off_t pos, const v
 	}
 
 	*length = written;
+
+	if (system_time() > gLastNotification + kInodeNotificationInterval) {
+		VMWNode* node = (VMWNode*)vnode->private_node;
+		notify_stat_changed(volume->id, node->GetParent()->GetInode(), node->GetInode(),
+			B_STAT_MODIFICATION_TIME | B_STAT_SIZE | B_STAT_INTERIM_UPDATE);
+		gLastNotification = system_time();
+	}
 
 	return status;
 }
