@@ -1,0 +1,29 @@
+1	Español (Latin American)	application/x-vnd.VinDuv.VMwareAddOns	3446789908
+Enable time synchronization	Deskbar tray icon	Alternatively: \"Synchronize clock\".	Sincronizar el reloj
+Shrink now…	Virtual Disk Shrinking		Reducir ahora…
+Clean up selection	Virtual Disk Shrinking		Limpiar elementos seleccionados
+OK	Virtual Disk Shrinking		OK
+Cancel	Deskbar tray icon		Cancelar
+Disk shrinking will operate on all auto-expanding disks attached to this virtual machine.\nFor best results it is recommended to clean up free space on these disks before starting the process.\n	Virtual Disk Shrinking		La reducción de discos operará en todos los discos auto-expandibles asignados a esta máquina virtual.\nPara mejores resultados es recomendable, antes de comenzar el proceso, limpiar primero el espacio libre en estos discos.\n
+Quit…	Deskbar tray icon		Salir…
+Starting cleanup process, please wait…	Virtual Disk Shrinking		Comenzando limpieza, por favor espera…
+Are you sure you want to quit?\nThis will stop clipboard sharing, and time synchronization (but not the mouse sharing, if it is currently enabled).	Deskbar tray icon		¿Estás seguro de querer salir?\nSe dejará de sincronizar el reloj, y de compartir el portapapeles (pero no el puntero, si está siendo compartido).
+Shrink virtual disks…	Deskbar tray icon		Reducir discos virtuales…
+Volumes to clean up:	Virtual Disk Shrinking		Volúmenes a limpiar:
+Shrink disks	Virtual Disk Shrinking		Reducir discos
+An error occurred while cleaning %s (%s). This volume may be damaged.	Virtual Disk Shrinking	First %s is the name of the volume being cleaned. Second %s is the error message.	Ocurrió un error al limpiar %s (%s). El volúmen puede estar dañado.
+Clean up disks…	Virtual Disk Shrinking		Limpiar discos…
+Stop	Virtual Disk Shrinking		Detener
+Cancel	Virtual Disk Shrinking		Cancelar
+OK	Deskbar tray icon		OK
+About VMware Add-ons…	Deskbar tray icon		Acerca de VMware Add-ons…
+Progress	Virtual Disk Shrinking		Progreso
+Clean up free space	Virtual Disk Shrinking		Limpiar el espacio libre
+Cleaning up %s…	Virtual Disk Shrinking	%s is the name of the volume being cleaned.	Limpiando %s…
+Enable mouse sharing	Deskbar tray icon		Compartir el puntero
+Error	Virtual Disk Shrinking		Error
+Not running in VMware	Deskbar tray icon	Alternatively: \"VMware not detected\".	VMware no detectado
+Unable to communicate with VMware. Your VMware version may be too old. Please start the process manually if your VMware version allows it.	Deskbar tray icon		No se pudo comunicar con VMware. La versión de VMware puede ser demasiado antigua. Por favor, inicia el proceso manualmente, si tu versión de VMware lo admite.
+The shrink operation will now be launched in VMware. This may take a long time; the virtual machine will be suspended during the process.	Virtual Disk Shrinking		La operación de limpieza comenzará en VMware. Esto puede demorar bastante; la máquina virtual será suspendida durante el proceso.
+Enable clipboard sharing	Deskbar tray icon		Compartir el portapapeles
+Quit	Deskbar tray icon		Salir
