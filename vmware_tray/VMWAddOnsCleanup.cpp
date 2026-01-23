@@ -6,11 +6,15 @@
 #include "VMWAddOnsCleanup.h"
 
 #include <Alert.h>
+#include <Catalog.h>
 
 #include "VMWAddOnsSelectWindow.h"
 #include "VMWAddOnsStatusWindow.h"
 #include "VMWAddOnsTray.h"
 
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Virtual Disk Shrinking"
 
 #define MB (1024 * 1024)
 #define BUF_SIZE (MB / 2)
@@ -58,11 +62,13 @@ VMWAddOnsCleanup::ThreadLoop()
 			break;
 
 		if (ret != B_DEVICE_FULL && ret != B_OK) {
-			(new BAlert("Error",
-				 (BString("An error occurred while cleaning ”")
-					 << name << "” (" << strerror(ret) << "). This volume may be damaged.")
-					 .String(),
-				 "Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))
+			BString alertText;
+			alertText.SetToFormat(B_TRANSLATE_COMMENT("An error occurred while cleaning %s (%s). "
+					"This volume may be damaged.",
+					"First %s is the name of the volume being cleaned. Second %s is the error message."),
+				name, strerror(ret));
+			(new BAlert(B_TRANSLATE("Error"), alertText.String(),
+				 B_TRANSLATE("OK"), NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))
 				->Go();
 		}
 	}
@@ -80,12 +86,14 @@ VMWAddOnsCleanup::Start(void* data)
 {
 	VMWAddOnsTray* parentTray = (VMWAddOnsTray*)data;
 
-	int32 result = (new BAlert("Shrink disks",
-						"Disk shrinking will operate on all auto-expanding disks "
+	int32 result = (new BAlert(B_TRANSLATE("Shrink disks"),
+						B_TRANSLATE("Disk shrinking will operate on all auto-expanding disks "
 						"attached to this virtual machine.\nFor best results it is "
-						"recommanded to clean up free space on these disks before starting "
-						"the process.\n",
-						"Cancel", "Shrink now" B_UTF8_ELLIPSIS, "Clean up disks" B_UTF8_ELLIPSIS,
+						"recommended to clean up free space on these disks before starting "
+						"the process.\n"),
+						B_TRANSLATE("Cancel"),
+						B_TRANSLATE("Shrink now" B_UTF8_ELLIPSIS),
+						B_TRANSLATE("Clean up disks" B_UTF8_ELLIPSIS),
 						B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT))
 					   ->Go();
 
@@ -104,11 +112,11 @@ VMWAddOnsCleanup::Start(void* data)
 		}
 	}
 
-	result = (new BAlert("Shrink disks",
-				  "The shrink operation will now be launched in VMWare."
-				  "This may take a long time ; the virtual machine will be "
-				  "suspended during the process.",
-				  "Cancel", "OK"))
+	result = (new BAlert(B_TRANSLATE("Shrink disks"),
+				  B_TRANSLATE("The shrink operation will now be launched in VMware. "
+				  "This may take a long time; the virtual machine will be "
+				  "suspended during the process."),
+				  B_TRANSLATE("Cancel"), B_TRANSLATE("OK")))
 				 ->Go();
 
 	// OK...
