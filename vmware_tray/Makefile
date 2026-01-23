@@ -16,6 +16,8 @@ NAME= vmware_tray
 #	DRIVER: Kernel Driver
 TYPE= APP
 
+APP_MIME_SIG = application/x-vnd.VinDuv.VMwareAddOns
+
 #	add support for new Pe and Eddie features
 #	to fill in generic makefile
 
@@ -58,7 +60,7 @@ RSRCS=
 #		naming scheme you need to specify the path to the library
 #		and it's name
 #		library: my_lib.a entry: my_lib.a or path/my_lib.a
-LIBS= be $(STDCPPLIBS)
+LIBS= be localestub $(STDCPPLIBS)
 
 #	specify additional paths to directories following the standard
 #	libXXX.so or libXXX.a naming scheme. You can specify full paths
@@ -81,6 +83,13 @@ LOCAL_INCLUDE_PATHS = ../shared_sources/
 #	specify the level of optimization that you desire
 #	NONE, SOME, FULL
 OPTIMIZE= SOME
+
+# 	Specify the codes for languages you are going to support in this
+# 	application. The default "en" one must be provided too. "make catkeys"
+# 	will recreate only the "locales/en.catkeys" file. Use it as a template
+# 	for creating catkeys for other languages. All localization files must be
+# 	placed in the "locales" subdirectory.
+LOCALES = en es es_419
 
 #	specify any preprocessor symbols to be defined. The symbols will not
 #	have their values set automatically; you must supply the value (if any)

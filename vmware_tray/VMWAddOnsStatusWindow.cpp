@@ -5,9 +5,13 @@
 
 #include "VMWAddOnsStatusWindow.h"
 
+#include <Catalog.h>
 #include <Screen.h>
 #include <String.h>
 
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Virtual Disk Shrinking"
 
 #define _H(x) static_cast<int>((x)->Frame().Height())
 #define _W(x) static_cast<int>((x)->Frame().Width())
@@ -19,19 +23,20 @@
 
 VMWAddOnsStatusWindow::VMWAddOnsStatusWindow()
 	:
-	BWindow(BRect(0, 0, 300, 400), "Progress", B_TITLED_WINDOW,
+	BWindow(BRect(0, 0, 300, 400), B_TRANSLATE("Progress"), B_TITLED_WINDOW,
 		B_NOT_RESIZABLE | B_NOT_CLOSABLE | B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS)
 {
 	fStatusView = new BView(Bounds(), "cleanup view", B_FOLLOW_ALL_SIDES, B_WILL_DRAW);
 	fStatusView->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	fProgressBar = new BStatusBar(BRect(SPACING, SPACING, 200, 45), NULL,
-		"Starting cleanup process, please wait...");
+		B_TRANSLATE("Starting cleanup process, please wait" B_UTF8_ELLIPSIS));
 	fProgressBar->ResizeToPreferred();
 
 	fStatusView->AddChild(fProgressBar);
 
-	fStopButton = new BButton(BRect(0, 0, 0, 0), NULL, "Stop", new BMessage(STOP_OPERATION));
+	fStopButton = new BButton(BRect(0, 0, 0, 0), NULL, B_TRANSLATE("Stop"),
+		new BMessage(STOP_OPERATION));
 	fStopButton->ResizeToPreferred();
 
 	fStopButton->MoveTo(2 * SPACING + _W(fProgressBar),
@@ -73,7 +78,10 @@ VMWAddOnsStatusWindow::MessageReceived(BMessage* message)
 
 			off_t size = sizeRead;
 
-			fProgressBar->Reset((BString("Cleaning up “") << name << "”" B_UTF8_ELLIPSIS).String());
+			BString text;
+			text.SetToFormat(B_TRANSLATE_COMMENT("Cleaning up %s" B_UTF8_ELLIPSIS,
+				"%s is the name of the volume being cleaned."), name);
+			fProgressBar->Reset(text.String());
 			fProgressBar->SetMaxValue(size);
 		}
 
