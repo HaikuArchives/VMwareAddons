@@ -7,11 +7,16 @@
 
 #include <stdlib.h>
 
+#include <Catalog.h>
 #include <NodeMonitor.h>
 #include <Screen.h>
 #include <ScrollView.h>
 
 #include "VMWAddOnsCleanup.h"
+
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Virtual Disk Shrinking"
 
 #define _H(x) static_cast<int>((x)->Frame().Height())
 #define _W(x) static_cast<int>((x)->Frame().Width())
@@ -25,7 +30,7 @@
 
 VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 	:
-	BWindow(BRect(0, 0, 300, 1), "Clean up free space", B_TITLED_WINDOW,
+	BWindow(BRect(0, 0, 300, 1), B_TRANSLATE("Clean up free space"), B_TITLED_WINDOW,
 		B_NOT_CLOSABLE | B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS)
 {
 	fVolumeRoster = new BVolumeRoster();
@@ -35,7 +40,7 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 	fDisksView = new BView(Bounds(), "disks view", B_FOLLOW_ALL, B_WILL_DRAW);
 	fDisksView->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
-	fInfoText = new BStringView(BRect(SPACING, y, 1, 1), NULL, "Volumes to cleanup :");
+	fInfoText = new BStringView(BRect(SPACING, y, 1, 1), NULL, B_TRANSLATE("Volumes to clean up:"));
 	fInfoText->ResizeToPreferred();
 	y += _H(fInfoText) + SPACING;
 	if (w < _W(fInfoText))
@@ -66,7 +71,7 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 
 	fDisksView->AddChild(new BScrollView(NULL, fVolumesList, B_FOLLOW_ALL_SIDES, 0, false, true));
 
-	fCleanupButton = new BButton(BRect(0, 0, 0, 0), NULL, "Cleanup selection",
+	fCleanupButton = new BButton(BRect(0, 0, 0, 0), NULL, B_TRANSLATE("Clean up selection"),
 		new BMessage(CLEANUP_SELECTION), B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
 	fCleanupButton->MakeDefault(true);
 	fCleanupButton->SetEnabled(fVolumesList->CurrentSelection() >= 0);
@@ -77,8 +82,8 @@ VMWAddOnsSelectWindow::VMWAddOnsSelectWindow()
 
 	fCleanupButton->SetEnabled(fVolumesList->CurrentSelection() >= 0);
 
-	fCancelButton = new BButton(BRect(0, 0, 0, 0), NULL, "Cancel", new BMessage(CANCEL_OPERATION),
-		B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
+	fCancelButton = new BButton(BRect(0, 0, 0, 0), NULL, B_TRANSLATE("Cancel"),
+		new BMessage(CANCEL_OPERATION), B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
 	fCancelButton->ResizeToPreferred();
 	fCancelButton->MoveTo(w - _W(fCleanupButton) - _W(fCancelButton), y + 3);
 

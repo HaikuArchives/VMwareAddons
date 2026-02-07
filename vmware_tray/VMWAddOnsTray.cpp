@@ -5,7 +5,9 @@
 
 #include "VMWAddOnsTray.h"
 
+#include <AboutWindow.h>
 #include <Alert.h>
+#include <Catalog.h>
 #include <Deskbar.h>
 #include <MenuItem.h>
 #include <Mime.h>
@@ -16,6 +18,9 @@
 
 #include "icons.h"
 
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Deskbar tray icon"
 
 #define CLIP_POLL_DELAY 1000000
 #define CLOCK_POLL_DELAY 60000000
@@ -193,13 +198,10 @@ VMWAddOnsTray::MessageReceived(BMessage* message)
 
 		case B_ABOUT_REQUESTED:
 		{
-			BAlert* alert = new BAlert("about",
-				APP_NAME ", version " APP_VERSION "\n"
-						 "© 2009, Vincent Duvert\n"
-						 "Distributed under the terms of the MIT License.",
-				"OK", NULL, NULL, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_INFO_ALERT);
-			alert->SetShortcut(0, B_ENTER);
-			alert->Go(NULL);
+			BAboutWindow* window = new BAboutWindow("VMware Add-ons",
+				"application/x-vnd.VinDuv.VMwareAddOns");
+			window->AddCopyright(2009, "Vincent Duvert");
+			window->Show();
 		} break;
 
 		case B_CLIPBOARD_CHANGED:
@@ -338,9 +340,9 @@ VMWAddOnsTray::StartShrink()
 		fBackdoor.CloseRPCChannel();
 	} else {
 		(new BAlert(TRAY_NAME,
-			 "Unable to communicate with VMWare. Your VMWare version may be too old. Please start "
-			 "the process manually if your VMware version allows it.",
-			 "Cancel", NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))
+			B_TRANSLATE("Unable to communicate with VMware. Your VMware version may be too old. "
+				"Please start the process manually if your VMware version allows it."),
+			 B_TRANSLATE("OK"), NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))
 			->Go();
 	}
 }
@@ -355,9 +357,12 @@ VMWAddOnsTray::RemoveMyself(bool askUser)
 	int32 result = 1;
 	if (askUser) {
 		result = (new BAlert(TRAY_NAME,
-					  "Are you sure you want to quit?\n"
-					  "This will stop clipboard sharing (but not mouse sharing if it is running).",
-					  "Cancel", "Quit", NULL, B_WIDTH_AS_USUAL, B_INFO_ALERT))
+					  B_TRANSLATE("Are you sure you want to quit?\n"
+						"This will stop clipboard sharing, and time synchronization "
+						"(but not the mouse sharing, if it is currently enabled)."),
+					  B_TRANSLATE("Cancel"),
+					  B_TRANSLATE("Quit"),
+					  NULL, B_WIDTH_AS_USUAL, B_INFO_ALERT))
 					 ->Go();
 	}
 
@@ -382,21 +387,24 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& fBackdoor)
 	SetFont(be_plain_font);
 
 	if (fBackdoor.InVMware()) {
-		menuItem = new BMenuItem("Enable mouse sharing", new BMessage(MOUSE_SHARING));
+		menuItem = new BMenuItem(B_TRANSLATE("Enable mouse sharing"), new BMessage(MOUSE_SHARING));
 		if (fBackdoor.GetGUISetting(VMWBackdoor::POINTER_GRAB_UNGRAB))
 			menuItem->SetMarked(gSettings.GetBool("mouse_enabled", true));
 		else
 			menuItem->SetMarked(false);
 		AddItem(menuItem);
 
-		menuItem = new BMenuItem("Enable clipboard sharing", new BMessage(CLIPBOARD_SHARING));
+		menuItem = new BMenuItem(B_TRANSLATE("Enable clipboard sharing"),
+			new BMessage(CLIPBOARD_SHARING));
 		if (fBackdoor.GetGUISetting(VMWBackdoor::CLIP_BOARD_SHARING))
 			menuItem->SetMarked(gSettings.GetBool("clip_enabled", true));
 		else
 			menuItem->SetMarked(false);
 		AddItem(menuItem);
 
-		menuItem = new BMenuItem("Enable time synchronization", new BMessage(TIMESYNC_HOST));
+		menuItem = new BMenuItem(B_TRANSLATE_COMMENT("Enable time synchronization",
+			"Alternatively: \"Synchronize clock\"."),
+			new BMessage(TIMESYNC_HOST));
 		if (fBackdoor.GetGUISetting(VMWBackdoor::TIME_SYNC))
 			menuItem->SetMarked(gSettings.GetBool("timesync_enabled", true));
 		else
@@ -405,18 +413,22 @@ VMWAddOnsMenu::VMWAddOnsMenu(VMWAddOnsTray* tray, VMWBackdoor& fBackdoor)
 
 		if (!tray->fCleanupInProgress) {
 			AddItem(
-				new BMenuItem("Shrink virtual disks " B_UTF8_ELLIPSIS, new BMessage(SHRINK_DISKS)));
+				new BMenuItem(B_TRANSLATE("Shrink virtual disks" B_UTF8_ELLIPSIS),
+				new BMessage(SHRINK_DISKS))
+			);
 		}
 	} else {
-		menuItem = new BMenuItem("Not running in VMware", NULL);
+		menuItem = new BMenuItem(B_TRANSLATE_COMMENT("Not running in VMware",
+			"Alternatively: \"VMware not detected\"."), NULL);
 		menuItem->SetEnabled(false);
 		AddItem(menuItem);
 	}
 
 	AddSeparatorItem();
 
-	AddItem(new BMenuItem("About " APP_NAME B_UTF8_ELLIPSIS, new BMessage(B_ABOUT_REQUESTED)));
-	AddItem(new BMenuItem("Quit" B_UTF8_ELLIPSIS, new BMessage(REMOVE_FROM_DESKBAR)));
+	AddItem(new BMenuItem(B_TRANSLATE("About " APP_NAME B_UTF8_ELLIPSIS),
+		new BMessage(B_ABOUT_REQUESTED)));
+	AddItem(new BMenuItem(B_TRANSLATE("Quit" B_UTF8_ELLIPSIS), new BMessage(REMOVE_FROM_DESKBAR)));
 
 	SetTargetForItems(tray);
 	SetAsyncAutoDestruct(true);

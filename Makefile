@@ -19,6 +19,7 @@ build:
 	make -C vmware_fs
 	make -C vmware_mouse
 	make -C vmware_tray
+	make -C vmware_tray bindcatalogs
 	make -C vmware_video/accelerant
 	make -C vmware_video/kernel
 
@@ -26,6 +27,7 @@ release:
 	make RELEASE=1 -C vmware_fs
 	make RELEASE=1 -C vmware_mouse
 	make RELEASE=1 -C vmware_tray
+	make RELEASE=1 -C vmware_tray bindcatalogs
 	make RELEASE=1 -C vmware_video/accelerant
 	make RELEASE=1 -C vmware_video/kernel
 
