@@ -207,12 +207,16 @@ VMWCoreBackdoor::VMWCoreBackdoor()
 	if (sigsetjmp(sigbuffer, true) != 0) {
 		// We crashed during the backdoor access
 		fInVMWare = false;
+		signal(SIGBUS, SIG_DFL);
 		signal(SIGILL, SIG_DFL);
+		signal(SIGSEGV, SIG_DFL);
 
 		return;
 	}
 
+	signal(SIGBUS, sighandler);
 	signal(SIGILL, sighandler);
+	signal(SIGSEGV, sighandler);
 #endif
 
 	regs_t regs;
@@ -220,7 +224,9 @@ VMWCoreBackdoor::VMWCoreBackdoor()
 	fInVMWare = (regs.esi == VMW_BACK_MAGIC);
 
 #ifndef _KERNEL_MODE
+	signal(SIGBUS, SIG_DFL);
 	signal(SIGILL, SIG_DFL);
+	signal(SIGSEGV, SIG_DFL);
 #endif
 
 	if (!fInVMWare)
